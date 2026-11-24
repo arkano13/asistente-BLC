@@ -26,6 +26,11 @@ export function crearServidor() {
   });
 
   const clave = Buffer.from(config.ADMIN_API_KEY);
+  // Página para vincular WhatsApp: pide la clave en el navegador (no va en la URL) y refresca el QR cada 3 s.
+  app.get('/vincular', (_req, res) => {
+    res.type('html').send(PAGINA_VINCULAR);
+  });
+
   app.use((req, res, next) => {
     const dada = Buffer.from(String(req.headers['x-api-key'] ?? ''));
     // Comparación en tiempo constante: no filtra la clave por tiempos de respuesta.
@@ -118,3 +123,20 @@ export function crearServidor() {
 
   return app;
 }
+
+const PAGINA_VINCULAR = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vincular WhatsApp</title><style>body{font-family:system-ui,sans-serif;max-width:420px;margin:40px auto;padding:0 16px;color:#222}
+input,button{font:inherit;padding:8px;width:100%;box-sizing:border-box;margin:4px 0}img{width:100%;max-width:320px;display:block;margin:16px auto}#e{font-weight:600}</style></head>
+<body><h1>Vincular WhatsApp</h1><p>En el teléfono: WhatsApp → Dispositivos vinculados → Vincular dispositivo.</p>
+<input id="emp" value="blc" placeholder="empresa"><input id="key" type="password" placeholder="ADMIN_API_KEY"><button id="go">Mostrar QR</button>
+<p id="e"></p><img id="qr" alt="" hidden>
+<script>
+let t;const $=(i)=>document.getElementById(i);
+async function tick(){const h={'x-api-key':$('key').value},id=encodeURIComponent($('emp').value);
+ try{const s=await fetch('/empresas/'+id+'/whatsapp',{headers:h});if(s.status===401){$('e').textContent='Clave incorrecta';return}
+ const j=await s.json();if(j.estado==='open'){$('e').textContent='Conectado ✔';$('qr').hidden=true;clearInterval(t);return}
+ const r=await fetch('/empresas/'+id+'/qr.png',{headers:h});
+ if(r.ok){$('qr').src=URL.createObjectURL(await r.blob());$('qr').hidden=false;$('e').textContent='Escanea el código (se renueva solo)'}
+ else{$('e').textContent='Esperando QR del gateway… (estado: '+j.estado+')'}}catch(e){$('e').textContent='Error: '+e}}
+$('go').onclick=()=>{clearInterval(t);tick();t=setInterval(tick,3000)};
+</script></body></html>`;
