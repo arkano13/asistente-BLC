@@ -1,0 +1,190 @@
+// Multi-tenant: toda tabla de negocio lleva empresaId.
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Rol {
+  CLIENTE
+  EQUIPO
+}
+
+enum Modo {
+  BOT
+  HUMANO
+}
+
+enum Direccion {
+  ENTRANTE
+  SALIENTE
+}
+
+enum Audiencia {
+  TODOS
+  EQUIPO
+}
+
+enum EstadoCita {
+  CONFIRMADA
+  CANCELADA
+}
+
+enum EstadoEscalamiento {
+  ABIERTO
+  CERRADO
+}
+
+model Empresa {
+  id          String   @id // slug, ej. "blc"
+  nombre      String
+  waActivo    Boolean  @default(true) @map("wa_activo")
+  modelo      String? // null = DEFAULT_MODEL
+  esfuerzo    String? // null = DEFAULT_EFFORT
+  zonaHoraria String   @default("America/Tegucigalpa") @map("zona_horaria")
+  perfil      Json     @default("{}") // identidad, tono, reglas (fases F1-F6)
+  horario     Json     @default("{}") // horario de citas
+  avisarA     String[] @default([]) @map("avisar_a") // JIDs del equipo para avisos
+  creadoEn    DateTime @default(now()) @map("creado_en")
+
+  waAuth        WaAuth[]
+  contactos     Contacto[]
+  mensajes      Mensaje[]
+  documentos    Documento[]
+  fragmentos    Fragmento[]
+  citas         Cita[]
+  leads         Lead[]
+  escalamientos Escalamiento[]
+
+  @@map("empresas")
+}
+
+/// Credenciales y llaves Signal de Baileys (reemplaza la carpeta de sesión).
+model WaAuth {
+  empresaId String  @map("empresa_id")
+  clave     String
+  valor     String
+  empresa   Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@id([empresaId, clave])
+  @@map("wa_auth")
+}
+
+model Contacto {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String   @map("empresa_id")
+  jid       String // chat de WhatsApp (puede ser LID)
+  telefono  String?
+  nombre    String?
+  rol       Rol      @default(CLIENTE)
+  modo      Modo     @default(BOT)
+  resumen   String? // memoria de largo plazo
+  creadoEn  DateTime @default(now()) @map("creado_en")
+
+  empresa       Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  mensajes      Mensaje[]
+  citas         Cita[]
+  leads         Lead[]
+  escalamientos Escalamiento[]
+
+  @@unique([empresaId, jid])
+  @@map("contactos")
+}
+
+model Mensaje {
+  id         BigInt    @id @default(autoincrement())
+  empresaId  String    @map("empresa_id")
+  contactoId String    @map("contacto_id") @db.Uuid
+  direccion  Direccion
+  contenido  String
+  waId       String?   @map("wa_id")
+  procesado  Boolean   @default(false) // solo aplica a ENTRANTE
+  creadoEn   DateTime  @default(now()) @map("creado_en")
+
+  empresa  Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  contacto Contacto @relation(fields: [contactoId], references: [id], onDelete: Cascade)
+
+  @@unique([empresaId, waId])
+  @@index([contactoId, id(sort: Desc)])
+  @@map("mensajes")
+}
+
+model Documento {
+  id        String    @id @default(uuid()) @db.Uuid
+  empresaId String    @map("empresa_id")
+  titulo    String
+  audiencia Audiencia @default(TODOS)
+  creadoEn  DateTime  @default(now()) @map("creado_en")
+
+  empresa    Empresa     @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  fragmentos Fragmento[]
+
+  @@map("documentos")
+}
+
+/// La columna tsv (tsvector en español) se crea en la migración SQL; Prisma no la maneja.
+model Fragmento {
+  id          BigInt                    @id @default(autoincrement())
+  empresaId   String                    @map("empresa_id")
+  documentoId String                    @map("documento_id") @db.Uuid
+  audiencia   Audiencia
+  contenido   String
+  tsv         Unsupported("tsvector")?
+
+  empresa   Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  documento Documento @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+
+  @@index([empresaId])
+  @@map("fragmentos")
+}
+
+model Cita {
+  id         String     @id @default(uuid()) @db.Uuid
+  empresaId  String     @map("empresa_id")
+  contactoId String     @map("contacto_id") @db.Uuid
+  inicio     DateTime   @db.Timestamptz
+  fin        DateTime   @db.Timestamptz
+  servicio   String
+  notas      String?
+  estado     EstadoCita @default(CONFIRMADA)
+  creadoEn   DateTime   @default(now()) @map("creado_en")
+
+  empresa  Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  contacto Contacto @relation(fields: [contactoId], references: [id], onDelete: Cascade)
+
+  @@map("citas")
+}
+
+model Lead {
+  id          String   @id @default(uuid()) @db.Uuid
+  empresaId   String   @map("empresa_id")
+  contactoId  String   @map("contacto_id") @db.Uuid
+  interes     String
+  email       String?
+  presupuesto String?
+  notas       String?
+  estado      String   @default("nuevo")
+  creadoEn    DateTime @default(now()) @map("creado_en")
+
+  empresa  Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  contacto Contacto @relation(fields: [contactoId], references: [id], onDelete: Cascade)
+
+  @@map("leads")
+}
+
+model Escalamiento {
+  id         String             @id @default(uuid()) @db.Uuid
+  empresaId  String             @map("empresa_id")
+  contactoId String             @map("contacto_id") @db.Uuid
+  motivo     String
+  estado     EstadoEscalamiento @default(ABIERTO)
+  creadoEn   DateTime           @default(now()) @map("creado_en")
+
+  empresa  Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  contacto Contacto @relation(fields: [contactoId], references: [id], onDelete: Cascade)
+
+  @@map("escalamientos")
+}
