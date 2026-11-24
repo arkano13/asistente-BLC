@@ -1,7 +1,10 @@
 // Multi-tenant: toda tabla de negocio lleva empresaId.
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  // explícito: si no, Prisma lo infiere del tsconfig y en Docker puede generar imports .ts
+  moduleFormat        = "esm"
+  importFileExtension = "js"
 }
 
 datasource db {
