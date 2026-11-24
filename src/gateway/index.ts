@@ -1,5 +1,6 @@
 import { empresasActivas } from '../db/repo.js';
 import { logger } from '../logger.js';
+import { CANAL_CONTROL, redis, type ControlWa } from '../queue/index.js';
 import { TenantSession } from './session.js';
 
 /**
@@ -36,6 +37,22 @@ async function reconcile() {
     }
   }
 }
+
+// Acciones pedidas desde el panel (código de emparejamiento, reiniciar vinculación).
+const sub = redis.duplicate();
+await sub.subscribe(CANAL_CONTROL);
+sub.on('message', (_canal, texto) => {
+  let m: ControlWa;
+  try {
+    m = JSON.parse(texto);
+  } catch {
+    return;
+  }
+  const s = sessions.get(m.empresa);
+  if (!s) return; // la tiene otra instancia
+  const tarea = m.accion === 'codigo' ? s.pedirCodigo(m.numero) : s.reiniciar();
+  tarea.catch((err) => logger.error({ err, empresa: m.empresa }, 'acción de control'));
+});
 
 await reconcile();
 setInterval(() => reconcile().catch((err) => logger.error({ err }, 'reconcile')), 30_000);

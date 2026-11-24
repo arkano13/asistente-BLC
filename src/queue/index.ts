@@ -60,6 +60,12 @@ export const ultimoKey = (empresaId: string, jid: string) => `wa:ultimo:${empres
 
 export const qrKey = (empresaId: string) => `wa:qr:${empresaId}`;
 export const statusKey = (empresaId: string) => `wa:status:${empresaId}`;
+/** Código de emparejamiento (alternativa al QR) o error al pedirlo: JSON { codigo } | { error }. */
+export const codigoKey = (empresaId: string) => `wa:codigo:${empresaId}`;
+/** Canal por el que el core le pide acciones al gateway que tiene el socket. */
+export const CANAL_CONTROL = 'wa:control';
+export type ControlWa = { empresa: string; accion: 'codigo'; numero: string } | { empresa: string; accion: 'reiniciar' };
+export const enviarControl = (m: ControlWa) => redis.publish(CANAL_CONTROL, JSON.stringify(m));
 
 /**
  * Lock por empresa: un número de WhatsApp debe tener UN solo socket. Si dos instancias del gateway

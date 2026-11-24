@@ -1,5 +1,6 @@
 import { Boom } from '@hapi/boom';
 import makeWASocket, {
+  Browsers,
   DisconnectReason,
   fetchLatestBaileysVersion,
   generateMessageIDV2,
@@ -17,7 +18,7 @@ import { config } from '../config.js';
 import { prisma } from '../db/prisma.js';
 import { buscarContacto, getContacto, getEmpresa, guardarEntrante, numeroPermitido, sincronizarRol, upsertContacto } from '../db/repo.js';
 import { logger } from '../logger.js';
-import { agendarChat, enviadoKey, nombreSalida, qrKey, redis, renovarLock, soltarLock, statusKey, tomarLock, ultimoKey, type OutboundJob } from '../queue/index.js';
+import { agendarChat, codigoKey, enviadoKey, nombreSalida, qrKey, redis, renovarLock, soltarLock, statusKey, tomarLock, ultimoKey, type OutboundJob } from '../queue/index.js';
 import { usarAuthPostgres } from './auth-state.js';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -65,6 +66,7 @@ export class TenantSession {
   private outWorker?: Worker<OutboundJob>;
   private stopped = false;
   private renovar?: NodeJS.Timeout;
+  private borrarAuth?: () => Promise<void>;
   private log;
 
   constructor(readonly empresaId: string) {
@@ -98,13 +100,15 @@ export class TenantSession {
 
   private async conectar() {
     const { state, saveCreds, borrar } = await usarAuthPostgres(this.empresaId);
-    const { version } = await fetchLatestBaileysVersion();
+    this.borrarAuth = borrar;
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    if (!state.creds.me) this.log.info({ version, isLatest }, 'sin vincular: esperando QR o código');
 
     const sock = makeWASocket({
       version,
       auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, this.log as never) },
       logger: this.log.child({ mod: 'baileys' }, { level: 'warn' }) as never,
-      browser: ['Asistente BLC', 'Chrome', '1.0'],
+      browser: Browsers.ubuntu('Chrome'), // un nombre inventado como sistema operativo hace que WhatsApp rechace el vínculo
       markOnlineOnConnect: false, // no marcar "en línea" siempre: así el teléfono sigue recibiendo notificaciones
       syncFullHistory: false,
     });
@@ -116,12 +120,13 @@ export class TenantSession {
       if (qr) await redis.set(qrKey(this.empresaId), qr, 'EX', 60); // el panel lo muestra; WhatsApp lo rota cada ~20 s
       if (connection) await redis.set(statusKey(this.empresaId), connection);
       if (connection === 'open') {
-        await redis.del(qrKey(this.empresaId));
+        await redis.del(qrKey(this.empresaId), codigoKey(this.empresaId));
         this.log.info('WhatsApp conectado');
         this.startOutbound();
       }
       if (connection === 'close') {
         const code = (lastDisconnect?.error as Boom | undefined)?.output?.statusCode;
+        if (code !== DisconnectReason.timedOut) this.log.warn({ code, motivo: lastDisconnect?.error?.message }, 'conexión cerrada');
         await this.outWorker?.close();
         this.outWorker = undefined;
         if (code === DisconnectReason.loggedOut) {
@@ -160,7 +165,11 @@ export class TenantSession {
     const empresa = await getEmpresa(this.empresaId);
     if (!empresa) return;
     // Filtro de números del panel: fuera del filtro, el bot ni guarda ni marca como leído (el chat queda intacto).
-    if (!numeroPermitido(empresa, telefono)) return;
+    if (!numeroPermitido(empresa, telefono)) {
+      this.log.info({ chat: original, telefono }, telefono ? 'mensaje fuera del filtro: ignorado' : 'mensaje sin número conocido (LID): el filtro no lo deja pasar');
+      return;
+    }
+    this.log.info({ chat: jid }, 'mensaje recibido');
     const contacto = await sincronizarRol(await upsertContacto(this.empresaId, jid, telefono, msg.pushName ?? null, original), empresa);
     if (!(await guardarEntrante(this.empresaId, contacto.id, text, msg.key.id))) return;
 
@@ -253,6 +262,32 @@ export class TenantSession {
       { connection: redis, concurrency: 1, limiter: { max: 20, duration: 60_000 } },
     );
     this.outWorker.on('failed', (job, err) => this.log.error({ err, jobId: job?.id }, 'fallo enviando mensaje'));
+  }
+
+  /** Vincular sin QR: WhatsApp > Dispositivos vinculados > Vincular con número de teléfono. */
+  async pedirCodigo(numero: string) {
+    const sock = this.sock;
+    let valor: object;
+    if (!sock) valor = { error: 'El gateway todavía está conectando. Intenta en unos segundos.' };
+    else if ((await redis.get(statusKey(this.empresaId))) === 'open') valor = { error: 'Este número ya está vinculado.' };
+    else {
+      try {
+        valor = { codigo: await sock.requestPairingCode(numero) };
+        this.log.info('código de emparejamiento generado');
+      } catch (err) {
+        this.log.error({ err }, 'no se pudo pedir el código');
+        valor = { error: 'WhatsApp no entregó el código. Intenta de nuevo.' };
+      }
+    }
+    await redis.set(codigoKey(this.empresaId), JSON.stringify(valor), 'EX', 170);
+  }
+
+  /** Borra la sesión guardada y arranca de cero (QR nuevo). Sirve si quedó a medio vincular. */
+  async reiniciar() {
+    this.log.warn('vinculación reiniciada desde el panel');
+    await redis.del(qrKey(this.empresaId), codigoKey(this.empresaId));
+    await this.borrarAuth?.();
+    this.sock?.end(new Boom('reinicio desde el panel', { statusCode: DisconnectReason.restartRequired }));
   }
 
   async stop() {

@@ -8,7 +8,7 @@ import { prisma } from '../db/prisma.js';
 import { getEmpresa, guardarEntrante, soloDigitos, upsertContacto } from '../db/repo.js';
 import { cargarDocumento } from '../knowledge/index.js';
 import { logger } from '../logger.js';
-import { qrKey, redis, statusKey } from '../queue/index.js';
+import { codigoKey, enviarControl, qrKey, redis, statusKey } from '../queue/index.js';
 import { abrirSesion, autorizarEmpresa, cerrarSesion, esClaveAdmin, hashear, intentoPermitido, leerSesion, verificar } from './auth.js';
 
 /**
@@ -106,7 +106,27 @@ export function crearServidor() {
   // Estado de WhatsApp y QR para vincular el número (WhatsApp > Dispositivos vinculados).
   r.get('/whatsapp', async (req, res) => {
     const id = idEmpresa(req);
-    res.json({ estado: (await redis.get(statusKey(id))) ?? 'desconocido', qrPendiente: Boolean(await redis.get(qrKey(id))) });
+    const codigo = await redis.get(codigoKey(id));
+    res.json({
+      estado: (await redis.get(statusKey(id))) ?? 'desconocido',
+      qrPendiente: Boolean(await redis.get(qrKey(id))),
+      emparejamiento: codigo ? JSON.parse(codigo) : null,
+    });
+  });
+  // Alternativa al QR: código de 8 caracteres para "Vincular con número de teléfono".
+  r.post('/whatsapp/codigo', async (req, res) => {
+    const numero = soloDigitos(String(req.body?.numero ?? ''));
+    if (numero.length < 8 || numero.length > 15) return void res.status(400).json({ error: 'número inválido: usa código de país y número, solo dígitos' });
+    const id = idEmpresa(req);
+    await redis.del(codigoKey(id));
+    await enviarControl({ empresa: id, accion: 'codigo', numero });
+    res.json({ ok: true });
+  });
+  r.post('/whatsapp/reiniciar', async (req, res) => {
+    const id = idEmpresa(req);
+    if ((await redis.get(statusKey(id))) === 'open') return void res.status(409).json({ error: 'WhatsApp está conectado: desvincúlalo primero desde el teléfono' });
+    await enviarControl({ empresa: id, accion: 'reiniciar' });
+    res.json({ ok: true });
   });
   r.get('/qr.png', async (req, res) => {
     const qr = await redis.get(qrKey(idEmpresa(req)));

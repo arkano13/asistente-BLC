@@ -15,8 +15,14 @@ const MODOS = [
   { id: 'EXCLUIR_LISTA', texto: 'Responder a todos menos a los de la lista' },
 ] as const;
 
+type EstadoWa = {
+  estado: string;
+  qrPendiente: boolean;
+  emparejamiento: { codigo: string } | { error: string } | null;
+};
+
 export function WhatsApp({ base }: { base: string }) {
-  const wa = useDatos<{ estado: string; qrPendiente: boolean }>(`${base}/whatsapp`, 3000);
+  const wa = useDatos<EstadoWa>(`${base}/whatsapp`, 3000);
   const empresa = useDatos<Empresa>(base);
   const [qr, setQr] = useState<string | null>(null);
 
@@ -52,6 +58,7 @@ export function WhatsApp({ base }: { base: string }) {
         )}
         <Aviso error={wa.error} />
       </div>
+      {wa.datos && wa.datos.estado !== 'open' && <Vincular base={base} wa={wa.datos} />}
       {empresa.datos && <Filtro base={base} empresa={empresa.datos} alGuardar={empresa.recargar} />}
     </section>
   );
@@ -97,6 +104,71 @@ function Filtro({ base, empresa, alGuardar }: { base: string; empresa: Empresa; 
       <Aviso error={error} />
       {estado && <p className="ok">{estado}</p>}
       <button onClick={guardar}>Guardar filtro</button>
+    </div>
+  );
+}
+
+function Vincular({ base, wa }: { base: string; wa: EstadoWa }) {
+  const [numero, setNumero] = useState('');
+  const [pidiendo, setPidiendo] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const e = wa.emparejamiento;
+
+  // La respuesta del gateway llega por el sondeo del estado.
+  useEffect(() => {
+    if (e) setPidiendo(false);
+  }, [e]);
+
+  const pedir = async () => {
+    setError(null);
+    setAviso(null);
+    try {
+      await api.post(`${base}/whatsapp/codigo`, { numero });
+      setPidiendo(true);
+    } catch (x) {
+      setError((x as Error).message);
+    }
+  };
+
+  const reiniciar = async () => {
+    if (!confirm('Se borra la vinculación a medias y se genera un QR nuevo. ¿Seguir?')) return;
+    setError(null);
+    try {
+      await api.post(`${base}/whatsapp/reiniciar`);
+      setAviso('Reiniciado. En unos segundos aparece un QR nuevo.');
+    } catch (x) {
+      setError((x as Error).message);
+    }
+  };
+
+  return (
+    <div className="tarjeta">
+      <h3>¿El QR no funciona? Vincula con código</h3>
+      <p className="tenue">
+        En el teléfono del asistente: WhatsApp → Dispositivos vinculados → Vincular dispositivo → "Vincular con número de
+        teléfono", y escribe el código que aparece aquí.
+      </p>
+      <label>
+        Número del WhatsApp del asistente (con código de país, por ejemplo 50499998888)
+        <input inputMode="numeric" value={numero} onChange={(x) => setNumero(x.target.value)} />
+      </label>
+      <div className="botones">
+        <button onClick={pedir} disabled={pidiendo || numero.replace(/\D/g, '').length < 8}>
+          {pidiendo ? 'Pidiendo código…' : 'Pedir código'}
+        </button>
+        <button className="secundario" onClick={reiniciar}>
+          Reiniciar vinculación
+        </button>
+      </div>
+      {e && 'codigo' in e && (
+        <p className="codigo">
+          {e.codigo.slice(0, 4)}-{e.codigo.slice(4)}
+        </p>
+      )}
+      {e && 'error' in e && <p className="error">{e.error}</p>}
+      <Aviso error={error} />
+      {aviso && <p className="ok">{aviso}</p>}
     </div>
   );
 }
