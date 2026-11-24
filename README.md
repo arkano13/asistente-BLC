@@ -60,7 +60,7 @@ Cada empresa es una carpeta `empresas/<id>/`:
 - Las notas de voz, imágenes y documentos sin texto llegan como un aviso, y el agente pide que se lo escriban.
 - Si Claude falla después de 3 intentos, el chat queda como no leído para que lo vea el equipo.
 - Cuando un cliente llega primero por LID y después por número, se reconoce como el mismo contacto.
-- La API compara la clave en tiempo constante y no devuelve detalles internos cuando hay un error 500. El core no arranca si falta `ANTHROPIC_API_KEY`.
+- La API compara la clave en tiempo constante y no devuelve detalles internos cuando hay un error 500. Si falta `ANTHROPIC_API_KEY`, el core arranca igual (para vincular WhatsApp) y registra un error.
 
 ## Railway
 
