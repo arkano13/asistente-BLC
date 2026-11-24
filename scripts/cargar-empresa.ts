@@ -7,10 +7,12 @@ import { cargarDocumento } from '../src/knowledge/index.js';
  * Sincroniza una empresa desde la carpeta empresas/<id>/:
  *   empresa.json        perfil, horario y configuración (las claves que empiezan con _ son notas)
  *   conocimiento/*.md   cada "# Título" es un documento; "<!-- audiencia: EQUIPO -->" lo marca como interno
- * Es idempotente: reemplaza el conocimiento anterior de esa empresa.
- * Uso: node dist/scripts/cargar-empresa.js blc
+ * Perfil y horario se sincronizan siempre. El conocimiento se reemplaza completo, salvo con
+ * --si-vacio: entonces solo se carga si la empresa no tiene documentos (para no pisar lo editado en el panel).
+ * Uso: node dist/scripts/cargar-empresa.js blc [--si-vacio]
  */
 const id = process.argv[2];
+const siVacio = process.argv.includes('--si-vacio');
 if (!id) throw new Error('Uso: cargar-empresa <id>');
 const dir = join(process.cwd(), 'empresas', id);
 const sinNotas = (o: unknown): unknown =>
@@ -28,6 +30,16 @@ const data = {
 };
 await prisma.empresa.upsert({ where: { id }, create: { id, ...data }, update: data });
 
+// Documentos cargados antes de guardar el texto original (contenido vacío) se recargan una vez.
+const [docs, sinTexto] = await Promise.all([
+  prisma.documento.count({ where: { empresaId: id } }),
+  prisma.documento.count({ where: { empresaId: id, contenido: '' } }),
+]);
+if (siVacio && docs > 0 && sinTexto === 0) {
+  console.log(`empresa ${id} sincronizada; conocimiento sin cambios (se edita desde el panel)`);
+  await prisma.$disconnect();
+  process.exit(0);
+}
 await prisma.documento.deleteMany({ where: { empresaId: id } });
 let total = 0;
 for (const archivo of (await readdir(join(dir, 'conocimiento'))).filter((f) => f.endsWith('.md')).sort()) {

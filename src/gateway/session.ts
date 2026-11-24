@@ -15,7 +15,7 @@ import makeWASocket, {
 import { Worker } from 'bullmq';
 import { config } from '../config.js';
 import { prisma } from '../db/prisma.js';
-import { buscarContacto, getContacto, getEmpresa, guardarEntrante, sincronizarRol, upsertContacto } from '../db/repo.js';
+import { buscarContacto, getContacto, getEmpresa, guardarEntrante, numeroPermitido, sincronizarRol, upsertContacto } from '../db/repo.js';
 import { logger } from '../logger.js';
 import { agendarChat, enviadoKey, nombreSalida, qrKey, redis, renovarLock, soltarLock, statusKey, tomarLock, ultimoKey, type OutboundJob } from '../queue/index.js';
 import { usarAuthPostgres } from './auth-state.js';
@@ -159,6 +159,8 @@ export class TenantSession {
 
     const empresa = await getEmpresa(this.empresaId);
     if (!empresa) return;
+    // Filtro de números del panel: fuera del filtro, el bot ni guarda ni marca como leído (el chat queda intacto).
+    if (!numeroPermitido(empresa, telefono)) return;
     const contacto = await sincronizarRol(await upsertContacto(this.empresaId, jid, telefono, msg.pushName ?? null, original), empresa);
     if (!(await guardarEntrante(this.empresaId, contacto.id, text, msg.key.id))) return;
 

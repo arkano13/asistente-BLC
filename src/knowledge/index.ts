@@ -22,7 +22,7 @@ export function partirTexto(texto: string, max = 1200): string[] {
 
 export async function cargarDocumento(empresaId: string, titulo: string, contenido: string, audiencia: Audiencia = 'TODOS') {
   return prisma.$transaction(async (tx) => {
-    const doc = await tx.documento.create({ data: { empresaId, titulo, audiencia } });
+    const doc = await tx.documento.create({ data: { empresaId, titulo, contenido, audiencia } });
     await tx.fragmento.createMany({
       data: partirTexto(contenido).map((c) => ({ empresaId, documentoId: doc.id, audiencia, contenido: `${titulo}\n${c}` })),
     });

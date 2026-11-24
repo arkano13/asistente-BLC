@@ -54,13 +54,24 @@ Cada empresa es una carpeta `empresas/<id>/`:
 - También se puede devolver desde la API con `POST /empresas/:id/contactos/:contactoId/devolver-al-bot`.
 - Las reacciones, los borrados y las ediciones que salen del número no cuentan como intervención. Tampoco los mensajes de más de 24 h que llegan al resincronizar.
 
+## Panel web
+
+El core sirve el panel (React + Vite, carpeta `panel/`) en su mismo dominio, sin CORS. Hoy está en https://asistente-core-production.up.railway.app y después irá en `panel.blcleaders.com`.
+
+- **Primer acceso:** en la pantalla de login, "Primer acceso" pide la `ADMIN_API_KEY` y crea el primer usuario de la empresa. Funciona una sola vez por empresa. Después se entra con email y contraseña, y se agregan usuarios desde la sección Usuarios.
+- **Sesión:** se usa una cookie `HttpOnly` + `SameSite=Strict` con un token aleatorio guardado en Redis durante 7 días. Las contraseñas se guardan con scrypt. El login tiene un límite de 10 intentos cada 15 minutos. La `ADMIN_API_KEY` nunca llega al navegador, salvo en "Primer acceso", donde la escribe la persona.
+- **Secciones:** WhatsApp (estado y QR), filtro de números, chats (conversación, pausar y devolver al bot, rol), escalamientos, leads, conocimiento (crear, editar y borrar) y usuarios.
+- **Filtro de números:** `TODOS`, `SOLO_LISTA` (modo prueba) o `EXCLUIR_LISTA`. Los mensajes de números fuera del filtro no se leen ni se guardan.
+- **Conocimiento:** al desplegar, `npm run seed` (con `--si-vacio`) sincroniza perfil y horario, pero no pisa el conocimiento editado en el panel. Para recargarlo desde `empresas/<id>/conocimiento`, usa `npm run cargar-empresa -- blc`.
+- **Desarrollo:** `npm run dev:core` en la raíz y `npm run dev` en `panel/`. Vite redirige `/empresas` y `/auth` al core.
+
 ## Protecciones
 
 - Cada mensaje se recorta a 4.000 caracteres, y el agente atiende como máximo 40 mensajes por chat cada 10 minutos. El resto se guarda pero no genera respuesta.
 - Las notas de voz, imágenes y documentos sin texto llegan como un aviso, y el agente pide que se lo escriban.
 - Si Claude falla después de 3 intentos, el chat queda como no leído para que lo vea el equipo.
 - Cuando un cliente llega primero por LID y después por número, se reconoce como el mismo contacto.
-- La API compara la clave en tiempo constante y no devuelve detalles internos cuando hay un error 500. Si falta `ANTHROPIC_API_KEY`, el core arranca igual (para vincular WhatsApp) y registra un error.
+- La API compara la clave en tiempo constante y no devuelve detalles internos cuando hay un error 500. El core no arranca si falta `ANTHROPIC_API_KEY`.
 
 ## Railway
 

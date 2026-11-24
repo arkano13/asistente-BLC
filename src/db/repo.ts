@@ -115,3 +115,16 @@ export async function historial(contactoId: string, limite: number) {
   });
   return filas.reverse();
 }
+
+/** Deja solo dígitos: "+504 9999-9999" -> "50499999999". */
+export const soloDigitos = (t: string) => t.replace(/\D/g, '');
+
+/**
+ * ¿El agente debe atender este número? TODOS: sí. SOLO_LISTA: solo si está en la lista
+ * (sin número conocido, no). EXCLUIR_LISTA: todos menos los de la lista.
+ */
+export function numeroPermitido(e: Pick<Empresa, 'filtroModo' | 'filtroNumeros'>, telefono: string | null) {
+  if (e.filtroModo === 'TODOS') return true;
+  const enLista = Boolean(telefono) && e.filtroNumeros.map(soloDigitos).includes(soloDigitos(telefono!));
+  return e.filtroModo === 'SOLO_LISTA' ? enLista : !enLista;
+}

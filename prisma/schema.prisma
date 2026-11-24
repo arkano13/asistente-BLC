@@ -41,6 +41,13 @@ enum EstadoEscalamiento {
   CERRADO
 }
 
+/// A quién atiende el agente. El filtro se aplica por número de teléfono.
+enum FiltroModo {
+  TODOS
+  SOLO_LISTA
+  EXCLUIR_LISTA
+}
+
 model Empresa {
   id          String   @id // slug, ej. "blc"
   nombre      String
@@ -51,6 +58,8 @@ model Empresa {
   perfil      Json     @default("{}") // identidad, tono, reglas (fases F1-F6)
   horario     Json     @default("{}") // horario de citas
   avisarA     String[] @default([]) @map("avisar_a") // JIDs del equipo para avisos
+  filtroModo     FiltroModo @default(TODOS) @map("filtro_modo")
+  filtroNumeros  String[]   @default([]) @map("filtro_numeros") // solo dígitos, con código de país
   creadoEn    DateTime @default(now()) @map("creado_en")
 
   waAuth        WaAuth[]
@@ -61,6 +70,7 @@ model Empresa {
   citas         Cita[]
   leads         Lead[]
   escalamientos Escalamiento[]
+  usuarios      Usuario[]
 
   @@map("empresas")
 }
@@ -119,6 +129,7 @@ model Documento {
   id        String    @id @default(uuid()) @db.Uuid
   empresaId String    @map("empresa_id")
   titulo    String
+  contenido String    @default("") // texto original, para editarlo desde el panel
   audiencia Audiencia @default(TODOS)
   creadoEn  DateTime  @default(now()) @map("creado_en")
 
@@ -190,4 +201,19 @@ model Escalamiento {
   contacto Contacto @relation(fields: [contactoId], references: [id], onDelete: Cascade)
 
   @@map("escalamientos")
+}
+
+/// Usuarios del panel web. La contraseña se guarda con scrypt (sal propia).
+model Usuario {
+  id           String    @id @default(uuid()) @db.Uuid
+  empresaId    String    @map("empresa_id")
+  email        String    @unique
+  nombre       String
+  hash         String
+  creadoEn     DateTime  @default(now()) @map("creado_en")
+  ultimoAcceso DateTime? @map("ultimo_acceso")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@map("usuarios")
 }

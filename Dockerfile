@@ -9,6 +9,12 @@ COPY scripts ./scripts
 COPY empresas ./empresas
 RUN npm run build && npm prune --omit=dev
 
+# Panel web (React + Vite): se compila aparte y el core lo sirve como archivos estáticos.
+COPY panel/package*.json ./panel/
+RUN cd panel && npm ci
+COPY panel ./panel
+RUN cd panel && npm run build
+
 FROM node:22-slim
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
@@ -18,5 +24,6 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json /app/prisma.config.ts ./
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/empresas ./empresas
+COPY --from=build /app/panel/dist ./panel/dist
 # El comando lo define cada servicio: core o gateway (ver README).
 CMD ["npm", "run", "start:core"]
