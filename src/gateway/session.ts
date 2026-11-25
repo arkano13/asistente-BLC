@@ -123,7 +123,9 @@ export class TenantSession {
       if (connection) await redis.set(statusKey(this.empresaId), connection);
       if (connection === 'open') {
         await redis.del(qrKey(this.empresaId), codigoKey(this.empresaId));
-        this.log.info('WhatsApp conectado');
+        const numero = sock.user?.id ? jidNormalizedUser(sock.user.id).split('@')[0] : '';
+        await redis.set(`wa:numero:${this.empresaId}`, numero);
+        this.log.info({ numero }, 'WhatsApp conectado');
         this.startOutbound();
       }
       if (connection === 'close') {
@@ -291,6 +293,9 @@ export class TenantSession {
   async reiniciar() {
     this.log.warn('vinculación reiniciada desde el panel');
     await redis.del(qrKey(this.empresaId), codigoKey(this.empresaId));
+    await redis.del(`wa:numero:${this.empresaId}`);
+    // Si estaba vinculado, se cierra la sesión en WhatsApp (desaparece de Dispositivos vinculados).
+    await this.sock?.logout().catch(() => {});
     await this.borrarAuth?.();
     this.sock?.end(new Boom('reinicio desde el panel', { statusCode: DisconnectReason.restartRequired }));
   }

@@ -110,6 +110,7 @@ export function crearServidor() {
     res.json({
       estado: (await redis.get(statusKey(id))) ?? 'desconocido',
       qrPendiente: Boolean(await redis.get(qrKey(id))),
+      numero: (await redis.get(`wa:numero:${id}`)) || null,
       emparejamiento: codigo ? JSON.parse(codigo) : null,
     });
   });
@@ -124,7 +125,6 @@ export function crearServidor() {
   });
   r.post('/whatsapp/reiniciar', async (req, res) => {
     const id = idEmpresa(req);
-    if ((await redis.get(statusKey(id))) === 'open') return void res.status(409).json({ error: 'WhatsApp está conectado: desvincúlalo primero desde el teléfono' });
     await enviarControl({ empresa: id, accion: 'reiniciar' });
     res.json({ ok: true });
   });

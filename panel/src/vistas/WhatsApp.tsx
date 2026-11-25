@@ -18,6 +18,7 @@ const MODOS = [
 type EstadoWa = {
   estado: string;
   qrPendiente: boolean;
+  numero: string | null;
   emparejamiento: { codigo: string } | { error: string } | null;
 };
 
@@ -47,7 +48,19 @@ export function WhatsApp({ base }: { base: string }) {
       <div className="tarjeta">
         <p>
           Estado: <strong>{ESTADOS[wa.datos?.estado ?? 'desconocido'] ?? wa.datos?.estado}</strong>
+          {wa.datos?.estado === 'open' && wa.datos.numero && <> · número vinculado: <strong>+{wa.datos.numero}</strong></>}
         </p>
+        {wa.datos?.estado === 'open' && (
+          <button
+            className="peligro"
+            onClick={async () => {
+              if (!confirm('Se cierra la sesión de WhatsApp en el servidor y aparece un QR nuevo para vincular. ¿Seguir?')) return;
+              await api.post(`${base}/whatsapp/reiniciar`).catch(() => {});
+            }}
+          >
+            Desvincular y mostrar QR nuevo
+          </button>
+        )}
         {qr ? (
           <>
             <p>En el teléfono del asistente: WhatsApp → Dispositivos vinculados → Vincular dispositivo, y escanea:</p>
