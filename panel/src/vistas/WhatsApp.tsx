@@ -92,6 +92,9 @@ function Filtro({ base, empresa, alGuardar }: { base: string; empresa: Empresa; 
           <input type="radio" name="modo" checked={modo === m.id} onChange={() => setModo(m.id)} /> {m.texto}
         </label>
       ))}
+      {modo === 'SOLO_LISTA' && !empresa.filtroNumeros.length && (
+        <p className="alerta-caja">La lista está vacía: el asistente no le está respondiendo a nadie. Agrega al menos un número y guarda.</p>
+      )}
       {modo !== 'TODOS' && (
         <label>
           Números (uno por línea, con código de país, por ejemplo 50499998888)

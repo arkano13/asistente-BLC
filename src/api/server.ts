@@ -148,6 +148,8 @@ export function crearServidor() {
   r.put('/filtro', async (req, res) => {
     const b = Filtro.parse(req.body);
     const numeros = [...new Set(b.numeros.map(soloDigitos).filter((n) => n.length >= 8))];
+    if (b.modo === 'SOLO_LISTA' && !numeros.length)
+      return void res.status(400).json({ error: 'En modo prueba agrega al menos un número válido; con la lista vacía el asistente no responde a nadie.' });
     const e = await prisma.empresa.update({ where: { id: idEmpresa(req) }, data: { filtroModo: b.modo, filtroNumeros: numeros } });
     res.json({ filtroModo: e.filtroModo, filtroNumeros: e.filtroNumeros, pausaAutomatica: e.pausaAutomatica });
   });
