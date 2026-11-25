@@ -60,6 +60,7 @@ model Empresa {
   avisarA     String[] @default([]) @map("avisar_a") // JIDs del equipo para avisos
   filtroModo     FiltroModo @default(TODOS) @map("filtro_modo")
   filtroNumeros  String[]   @default([]) @map("filtro_numeros") // solo dígitos, con código de país
+  pausaAutomatica Boolean   @default(true) @map("pausa_automatica") // escribir a mano desde el número pausa el bot en ese chat
   creadoEn    DateTime @default(now()) @map("creado_en")
 
   waAuth        WaAuth[]

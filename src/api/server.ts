@@ -100,7 +100,7 @@ export function crearServidor() {
   r.get('/', async (req, res) => {
     const e = await getEmpresa(idEmpresa(req));
     if (!e) return void res.status(404).json({ error: 'empresa no existe' });
-    res.json({ id: e.id, nombre: e.nombre, zonaHoraria: e.zonaHoraria, filtroModo: e.filtroModo, filtroNumeros: e.filtroNumeros });
+    res.json({ id: e.id, nombre: e.nombre, zonaHoraria: e.zonaHoraria, filtroModo: e.filtroModo, filtroNumeros: e.filtroNumeros, pausaAutomatica: e.pausaAutomatica });
   });
 
   // Estado de WhatsApp y QR para vincular el número (WhatsApp > Dispositivos vinculados).
@@ -134,6 +134,12 @@ export function crearServidor() {
     res.set('cache-control', 'no-store').type('image/png').send(await QRCode.toBuffer(qr, { width: 320 }));
   });
 
+  r.put('/pausa-automatica', async (req, res) => {
+    const activa = z.object({ activa: z.boolean() }).parse(req.body).activa;
+    await prisma.empresa.update({ where: { id: idEmpresa(req) }, data: { pausaAutomatica: activa } });
+    res.json({ pausaAutomatica: activa });
+  });
+
   // Filtro de números: a quién atiende el agente.
   const Filtro = z.object({
     modo: z.enum(['TODOS', 'SOLO_LISTA', 'EXCLUIR_LISTA']),
@@ -143,7 +149,7 @@ export function crearServidor() {
     const b = Filtro.parse(req.body);
     const numeros = [...new Set(b.numeros.map(soloDigitos).filter((n) => n.length >= 8))];
     const e = await prisma.empresa.update({ where: { id: idEmpresa(req) }, data: { filtroModo: b.modo, filtroNumeros: numeros } });
-    res.json({ filtroModo: e.filtroModo, filtroNumeros: e.filtroNumeros });
+    res.json({ filtroModo: e.filtroModo, filtroNumeros: e.filtroNumeros, pausaAutomatica: e.pausaAutomatica });
   });
 
   // Chats: último mensaje, modo (BOT/HUMANO) y si hay un escalamiento abierto.

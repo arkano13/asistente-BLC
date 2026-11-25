@@ -223,7 +223,9 @@ export class TenantSession {
       this.log.info({ jid }, 'chat devuelto al agente');
       return;
     }
-    if (contacto.modo !== 'HUMANO') {
+    // Con la pausa automática apagada (pruebas), escribir desde el número no pausa; /pausa sí.
+    const pausar = texto === CMD_PAUSAR || (await getEmpresa(this.empresaId))?.pausaAutomatica !== false;
+    if (pausar && contacto.modo !== 'HUMANO') {
       await prisma.contacto.update({ where: { id: contacto.id }, data: { modo: 'HUMANO' } });
       this.log.info({ jid, msgId: id, tipo: Object.keys(msg.message ?? {}).join(',') }, 'una persona tomó el chat: agente pausado');
     }

@@ -60,6 +60,7 @@ export function WhatsApp({ base }: { base: string }) {
       </div>
       {wa.datos && wa.datos.estado !== 'open' && <Vincular base={base} wa={wa.datos} />}
       {empresa.datos && <Filtro base={base} empresa={empresa.datos} alGuardar={empresa.recargar} />}
+      {empresa.datos && <PausaAutomatica base={base} activa={empresa.datos.pausaAutomatica} alGuardar={empresa.recargar} />}
     </section>
   );
 }
@@ -169,6 +170,33 @@ function Vincular({ base, wa }: { base: string; wa: EstadoWa }) {
       {e && 'error' in e && <p className="error">{e.error}</p>}
       <Aviso error={error} />
       {aviso && <p className="ok">{aviso}</p>}
+    </div>
+  );
+}
+
+function PausaAutomatica({ base, activa, alGuardar }: { base: string; activa: boolean; alGuardar: () => void }) {
+  const [error, setError] = useState<string | null>(null);
+  const cambiar = async (valor: boolean) => {
+    setError(null);
+    try {
+      await api.put(`${base}/pausa-automatica`, { activa: valor });
+      alGuardar();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+  return (
+    <div className="tarjeta">
+      <h3>Pausa automática</h3>
+      <label className="opcion">
+        <input type="checkbox" checked={activa} onChange={(e) => cambiar(e.target.checked)} /> Pausar el bot en un chat
+        cuando alguien escribe a mano desde el WhatsApp del asistente
+      </label>
+      <p className="tenue">
+        Apágala mientras pruebas desde el mismo teléfono o WhatsApp Web del asistente. Con la pausa apagada, /pausa sigue
+        funcionando para pausar un chat a mano.
+      </p>
+      <Aviso error={error} />
     </div>
   );
 }

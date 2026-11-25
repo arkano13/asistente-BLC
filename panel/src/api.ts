@@ -42,6 +42,7 @@ export interface Empresa {
   zonaHoraria: string;
   filtroModo: 'TODOS' | 'SOLO_LISTA' | 'EXCLUIR_LISTA';
   filtroNumeros: string[];
+  pausaAutomatica: boolean;
 }
 
 export interface FilaContacto {
