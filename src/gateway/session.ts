@@ -111,6 +111,8 @@ export class TenantSession {
       browser: Browsers.ubuntu('Chrome'), // un nombre inventado como sistema operativo hace que WhatsApp rechace el vínculo
       markOnlineOnConnect: false, // no marcar "en línea" siempre: así el teléfono sigue recibiendo notificaciones
       syncFullHistory: false,
+      // Estados y difusiones: no se usan y generan errores de descifrado en los logs.
+      shouldIgnoreJid: (jid) => isJidStatusBroadcast(jid) || isJidBroadcast(jid) || isJidNewsletter(jid),
     });
     this.sock = sock;
 

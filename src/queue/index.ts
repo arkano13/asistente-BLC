@@ -36,11 +36,15 @@ export function colaSalida(empresaId: string) {
  * el jobId fijo hace que solo exista un trabajo y el agente responde una vez a los 3.
  */
 export async function agendarChat(job: InboundJob, delay: number) {
+  const jobId = `${job.empresaId}__${job.jid}`;
+  // Un trabajo fallido con el mismo id bloquearía el chat para siempre (BullMQ ignora el add): se quita.
+  const previo = await colaEntrada.getJob(jobId);
+  if (previo && ((await previo.isFailed()) || (await previo.isCompleted()))) await previo.remove().catch(() => {});
   await colaEntrada.add('chat', job, {
-    jobId: `${job.empresaId}__${job.jid}`,
+    jobId,
     delay,
     removeOnComplete: true,
-    removeOnFail: 100,
+    removeOnFail: true,
     attempts: 3,
     backoff: { type: 'exponential', delay: 5000 },
   });
