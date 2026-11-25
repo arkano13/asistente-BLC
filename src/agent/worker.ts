@@ -4,7 +4,7 @@ import type { Contacto, Empresa } from '../db/prisma.js';
 import { getContacto, getEmpresa, guardarSaliente, historial, marcarProcesados, pendientes } from '../db/repo.js';
 import { logger } from '../logger.js';
 import { agendarChat, enviarTexto, INBOUND, marcarNoLeido, redis, type InboundJob } from '../queue/index.js';
-import { actualizarResumen } from './memory.js';
+import { actualizarEstado, actualizarResumen } from './memory.js';
 import { aMensajes, ejecutarAgente } from './orchestrator.js';
 
 /** Procesa los mensajes pendientes de un chat y devuelve la respuesta (también lo usa /simular). */
@@ -36,6 +36,11 @@ export function iniciarWorkerAgente() {
       if (!empresa || !contacto) return;
       const r = await atenderChat(empresa, contacto);
       if (r?.texto) await enviarTexto(empresaId, jid, r.texto, r.escalado);
+      // Antes de liberar el chat: el próximo turno recibe el estado ya actualizado.
+      if (r) {
+        const actual = await getContacto(empresaId, jid);
+        if (actual) await actualizarEstado(empresa, actual).catch((err) => logger.error({ err }, 'estado de la conversación'));
+      }
     },
     { connection: redis, concurrency: 10 },
   );

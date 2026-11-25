@@ -32,7 +32,7 @@ const herramientas: Herramienta[] = [
     def: {
       name: 'buscar_conocimiento',
       description:
-        'Busca en la base de conocimiento oficial de la empresa (servicios, precios, políticas, procesos). Úsala antes de dar cualquier dato concreto; no inventes datos que no aparezcan aquí.',
+        'Busca en la base de conocimiento oficial de la empresa (servicios, metodología, políticas, procesos, casos). Úsala antes de dar cualquier dato concreto; no inventes datos que no aparezcan aquí.',
       input_schema: esquema({ consulta: { type: 'string', description: 'Pregunta o palabras clave en español' } }, ['consulta']),
       strict: true,
     },
@@ -108,16 +108,24 @@ const herramientas: Herramienta[] = [
       strict: true,
     },
     run: async ({ interes, nombre, organizacion, email, presupuesto, notas }, { empresa, contacto }) => {
-      await prisma.lead.create({
-        data: {
-          empresaId: empresa.id,
-          contactoId: contacto.id,
-          interes,
-          email: email || null,
-          presupuesto: presupuesto || null,
-          notas: [organizacion && `Organización: ${organizacion}`, notas].filter(Boolean).join('\n'),
-        },
+      if (!nombre.trim()) return { ok: false, error: 'Falta el nombre: pídelo antes de registrar.' };
+      const datos = {
+        interes,
+        email: email || null,
+        presupuesto: presupuesto || null,
+        notas: [organizacion && `Organización: ${organizacion}`, notas].filter(Boolean).join('\n'),
+      };
+      // Un lead por contacto cada 30 días: si ya existe se actualiza en vez de duplicarlo.
+      const previo = await prisma.lead.findFirst({
+        where: { contactoId: contacto.id, creadoEn: { gte: new Date(Date.now() - 30 * 86400_000) } },
+        orderBy: { creadoEn: 'desc' },
       });
+      if (previo) {
+        await prisma.lead.update({ where: { id: previo.id }, data: datos });
+        if (nombre) await prisma.contacto.update({ where: { id: contacto.id }, data: { nombre } });
+        return { ok: true, actualizado: true, nota: 'Ya existía un lead de este contacto: se actualizó, no se creó otro.' };
+      }
+      await prisma.lead.create({ data: { empresaId: empresa.id, contactoId: contacto.id, ...datos } });
       if (nombre) await prisma.contacto.update({ where: { id: contacto.id }, data: { nombre } });
       await avisarEquipo(empresa, `Nuevo lead: ${nombre} (${contacto.telefono ?? contacto.jid}) interesado en ${interes}.`);
       return { ok: true };
@@ -133,8 +141,11 @@ const herramientas: Herramienta[] = [
       strict: true,
     },
     run: async ({ motivo }, { empresa, contacto }) => {
+      const abierto = await prisma.escalamiento.findFirst({ where: { contactoId: contacto.id, estado: 'ABIERTO' } });
       await prisma.$transaction([
-        prisma.escalamiento.create({ data: { empresaId: empresa.id, contactoId: contacto.id, motivo } }),
+        abierto
+          ? prisma.escalamiento.update({ where: { id: abierto.id }, data: { motivo: `${abierto.motivo}\n${motivo}` } })
+          : prisma.escalamiento.create({ data: { empresaId: empresa.id, contactoId: contacto.id, motivo } }),
         prisma.contacto.update({ where: { id: contacto.id }, data: { modo: 'HUMANO' } }),
       ]);
       // El equipo responde desde el mismo WhatsApp: el chat queda como no leído para que lo vea.

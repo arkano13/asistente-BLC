@@ -96,6 +96,7 @@ model Contacto {
   rol       Rol      @default(CLIENTE)
   modo      Modo     @default(BOT)
   resumen   String? // memoria de largo plazo
+  estado    Json?   // estado estructurado de la conversación (lo recalcula el sistema en cada turno)
   creadoEn  DateTime @default(now()) @map("creado_en")
 
   empresa       Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)

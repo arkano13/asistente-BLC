@@ -73,6 +73,9 @@ export async function ejecutarAgente(empresa: Empresa, contacto: Contacto, messa
         usadas.push(c.name);
         try {
           const out = await ejecutarHerramienta(c.name, c.input, { empresa, contacto });
+          // Auditoría: queda en el log si cada acción se ejecutó y con qué resultado.
+          const r = out as { ok?: boolean; error?: string; actualizado?: boolean } | null;
+          if (c.name !== 'buscar_conocimiento') log.info({ tool: c.name, ok: r?.ok, error: r?.error, actualizado: r?.actualizado }, 'herramienta ejecutada');
           return { type: 'tool_result', tool_use_id: c.id, content: JSON.stringify(out) };
         } catch (err) {
           log.error({ err, tool: c.name }, 'error en herramienta');
