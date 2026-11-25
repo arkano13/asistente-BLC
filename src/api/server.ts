@@ -190,6 +190,16 @@ export function crearServidor() {
     ]);
     res.json({ ok: true });
   });
+  // Pruebas: borra el contacto con todo su historial (mensajes, leads, escalamientos, memoria y estado).
+  // El próximo mensaje de ese número empieza una conversación nueva desde cero.
+  r.delete('/contactos/:contactoId', async (req, res) => {
+    const id = idEmpresa(req);
+    const c = await prisma.contacto.findFirst({ where: { id: param(req, 'contactoId'), empresaId: id } });
+    if (!c) return void res.status(404).json({ error: 'contacto no existe' });
+    await prisma.contacto.delete({ where: { id: c.id } });
+    await redis.del(`wa:rate:${id}:${c.jid}`, `wa:ultimo:${id}:${c.jid}`);
+    res.json({ ok: true });
+  });
   r.patch('/contactos/:contactoId', async (req, res) => {
     const b = z.object({ rol: z.enum(['CLIENTE', 'EQUIPO']).optional(), nombre: z.string().max(100).optional() }).parse(req.body);
     const n = await prisma.contacto.updateMany({ where: { id: param(req, 'contactoId'), empresaId: idEmpresa(req) }, data: b });

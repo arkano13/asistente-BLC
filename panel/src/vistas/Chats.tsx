@@ -72,6 +72,21 @@ function Detalle({ base, id, alCerrar, alCambiar }: { base: string; id: string; 
           {c.nombre && <div className="tenue">{c.telefono ? `+${c.telefono}` : c.jid}</div>}
         </div>
         <span className="espacio" />
+        <button
+          className="peligro"
+          onClick={async () => {
+            if (!confirm('Se borra toda la conversación de este número (mensajes, memoria, leads y escalamientos). El próximo mensaje empieza desde cero. ¿Seguir?')) return;
+            try {
+              await api.del(`${base}/contactos/${id}`);
+              alCerrar();
+              alCambiar();
+            } catch (e) {
+              setError((e as Error).message);
+            }
+          }}
+        >
+          Reiniciar conversación
+        </button>
         {c.modo === 'BOT' ? (
           <button className="secundario" onClick={() => accion(() => api.post(`${base}/contactos/${id}/pausar`))}>
             Pausar bot
