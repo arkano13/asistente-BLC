@@ -9,7 +9,12 @@ const lista = (items?: string[]) => (items?.length ? items.map((i) => `- ${i}`).
  * 2) volátil (fecha, horario humano, contacto, memoria) -> después del punto de caché.
  * El orden de autoridad sigue el Manual Maestro: políticas > manual > conocimiento > conversación > usuario.
  */
-export function construirSistema(empresa: Empresa, contacto: Contacto) {
+export interface AccionesPrevias {
+  leads: { interes: string; creadoEn: Date }[];
+  escalamientos: { motivo: string; estado: string; creadoEn: Date }[];
+}
+
+export function construirSistema(empresa: Empresa, contacto: Contacto, previas: AccionesPrevias = { leads: [], escalamientos: [] }) {
   const p = perfilDe(empresa);
   const h = horarioDe(empresa);
   const nombre = p.nombreAsistente
@@ -45,6 +50,20 @@ Tono: ${p.tono ?? 'cercano, profesional y breve.'}
 - No insistas si la persona no desea continuar y no presiones para obtener datos personales.
 - Si ves un aviso entre corchetes como "[El contacto envió una nota de voz…]", explica que por ahora solo puedes leer texto y pide que lo escriba.
 ${lista(p.reglas)}
+
+# Cómo decidir qué hacer en cada mensaje
+- Antes de responder, relee la conversación completa (incluidos tus mensajes) e identifica qué quiere la persona ahora: información general, un servicio concreto, el diagnóstico o una reunión, un precio, hablar con alguien, o una queja.
+- Orientar o avanzar: orienta solo si la persona no sabe qué necesita. Si ya mostró una necesidad concreta o interés en el diagnóstico, una propuesta o una reunión, avanza: deja de explicar y pide solo el dato que falte (nombre u organización). Con nombre e interés, registra el lead y escala para que el equipo coordine.
+- Si la persona respondió tu pregunta, usa esa respuesta y pasa al siguiente paso. Nunca repitas una pregunta ya respondida ni una explicación que ya diste; si ya lo dijiste, no lo vuelvas a decir con otras palabras.
+- Respuestas cortas como "sí", "ok", "procesos manuales" o "me interesa" responden a tu último mensaje: interprétalas en ese contexto.
+- Si no entiendes qué quiere, haz una pregunta concreta en lugar de suponer o de dar información genérica.
+- Conversa como un buen asesor comercial: escucha, conecta su necesidad con lo que BLC hace y propone el siguiente paso. No vendas ni presiones.
+
+# Acciones y evidencia
+- Solo afirma que registraste sus datos o que pasaste la conversación al equipo si en este mismo turno la herramienta (registrar_lead o escalar_a_humano) respondió ok. Si no la ejecutaste, no lo digas ni lo anuncies ("voy a trasladar tu consulta"): ejecútala primero o no lo menciones.
+- Los mensajes oficiales de transferencia, información desconocida y queja van siempre junto con escalar_a_humano en el mismo turno.
+- Si una herramienta falla, no digas que se hizo.
+- Revisa "Acciones ya realizadas con este contacto" para no registrar dos veces ni pedir datos que ya tienes.
 
 # Información y precios
 - Para cualquier dato concreto usa buscar_conocimiento. Si no aparece, no lo inventes: usa el mensaje de información desconocida y escala.
@@ -84,6 +103,12 @@ ${
   const volatil = `Fecha y hora actual (${empresa.zonaHoraria}): ${ahora}.
 Atención humana en este momento: ${enHorarioHumano(empresa) ? 'sí, dentro del horario' : 'no, fuera del horario; si escalas, avisa que el equipo responderá en el siguiente horario hábil'}.
 Nombre del contacto: ${contacto.nombre ?? 'desconocido'}.
+Acciones ya realizadas con este contacto: ${
+    [
+      ...previas.leads.map((l) => `lead registrado (${l.interes})`),
+      ...previas.escalamientos.map((e) => `escalado al equipo (${e.motivo}; ${e.estado === 'ABIERTO' ? 'abierto' : 'cerrado'})`),
+    ].join('; ') || 'ninguna'
+  }.
 ${contacto.resumen ? `Lo que sabemos de conversaciones anteriores:\n${contacto.resumen}` : ''}`;
 
   return [

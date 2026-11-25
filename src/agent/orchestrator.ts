@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { config, type Effort } from '../config.js';
 import type { Contacto, Empresa, Mensaje } from '../db/prisma.js';
+import { prisma } from '../db/prisma.js';
 import { logger } from '../logger.js';
 import { ejecutarHerramienta, herramientasPara } from '../tools/index.js';
 import { construirSistema } from './prompt.js';
@@ -32,7 +33,11 @@ export async function ejecutarAgente(empresa: Empresa, contacto: Contacto, messa
   const usadas: string[] = [];
   const uso = { entrada: 0, salida: 0, cache: 0 };
   const tools = herramientasPara(empresa, contacto.rol);
-  const system = construirSistema(empresa, contacto);
+  const [leads, escalamientos] = await Promise.all([
+    prisma.lead.findMany({ where: { contactoId: contacto.id }, select: { interes: true, creadoEn: true }, orderBy: { creadoEn: 'desc' }, take: 5 }),
+    prisma.escalamiento.findMany({ where: { contactoId: contacto.id }, select: { motivo: true, estado: true, creadoEn: true }, orderBy: { creadoEn: 'desc' }, take: 5 }),
+  ]);
+  const system = construirSistema(empresa, contacto, { leads, escalamientos });
 
   for (let vuelta = 0; vuelta < config.MAX_TOOL_TURNS; vuelta++) {
     const res = await anthropic.messages.create({

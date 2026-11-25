@@ -3,6 +3,7 @@
   "id": "blc",
   "nombre": "Building Leaders Company",
   "zonaHoraria": "America/Tegucigalpa",
+  "esfuerzo": "medium",
   "avisarA": [],
   "perfil": {
     "nombreAsistente": "Asistente",
