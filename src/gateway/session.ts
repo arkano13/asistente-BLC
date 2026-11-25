@@ -225,7 +225,7 @@ export class TenantSession {
     }
     if (contacto.modo !== 'HUMANO') {
       await prisma.contacto.update({ where: { id: contacto.id }, data: { modo: 'HUMANO' } });
-      this.log.info({ jid }, 'una persona tomó el chat: agente pausado');
+      this.log.info({ jid, msgId: id, tipo: Object.keys(msg.message ?? {}).join(',') }, 'una persona tomó el chat: agente pausado');
     }
     if (texto && texto !== CMD_PAUSAR) {
       await prisma.mensaje.create({
@@ -258,6 +258,7 @@ export class TenantSession {
         const messageId = generateMessageIDV2(sock.user?.id);
         await redis.set(enviadoKey(this.empresaId, messageId), '1', 'EX', 86400); // antes de enviar: evita la carrera con el evento
         await sock.sendMessage(data.jid, { text: data.text }, { messageId });
+        this.log.info({ jid: data.jid, msgId: messageId }, 'respuesta enviada');
       },
       { connection: redis, concurrency: 1, limiter: { max: 20, duration: 60_000 } },
     );

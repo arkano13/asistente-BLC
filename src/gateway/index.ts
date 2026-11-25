@@ -7,6 +7,16 @@ import { TenantSession } from './session.js';
  * Proceso gateway: mantiene un socket Baileys por empresa activa.
  * Para escalar, SHARD=0/2, 1/2... reparte empresas entre instancias (hash del id).
  */
+// libsignal imprime con console.log las sesiones cifradas, con llaves privadas: no deben ir a los logs.
+for (const nivel of ['log', 'info', 'warn'] as const) {
+  const original = console[nivel].bind(console);
+  console[nivel] = (...args: unknown[]) => {
+    const t = typeof args[0] === 'string' ? args[0] : '';
+    if (/^(Closing (open )?session|Removing old closed session|Opening session|Migrating session|Session already|Decrypted message with closed session|V1 session storage|Failed to decrypt message with any known session|Session error)/.test(t)) return;
+    original(...args);
+  };
+}
+
 const sessions = new Map<string, TenantSession>();
 const [shard, shards] = (process.env.SHARD ?? '0/1').split('/').map(Number);
 
