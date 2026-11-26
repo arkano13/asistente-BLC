@@ -4,7 +4,6 @@ Fuentes usadas: `BLC Identidad de Marca.docx`, `BLC_Manual_Maestro_Asistente_Wha
 
 ## Para confirmar
 
-1. **Enlace de Hotmart**: la web usa el mismo enlace para "Adquirir conferencia" y para el programa en línea. El asistente solo lo da para el programa en línea; las conferencias las coordina el equipo.
 2. **Feriados de Honduras**: no están configurados. Solo afectan el aviso de "responderemos en el siguiente horario hábil".
 3. **Preguntas frecuentes** (`conocimiento/09-preguntas-frecuentes.md`): las redacté a partir de la web. Hay que revisarlas antes de producción.
 5. **Modalidad de talleres y programas** (`conocimiento/10-como-contratar.md`): la base no dice si se pueden dar en línea. El asistente responde que el equipo lo confirma; si hay una respuesta oficial, agrégala en Conocimiento.
@@ -12,6 +11,7 @@ Fuentes usadas: `BLC Identidad de Marca.docx`, `BLC_Manual_Maestro_Asistente_Wha
 
 ## Definido
 
+- Líder Intencional: programa online; enlace oficial de compra blcleaders.com/lider-intencional (reemplaza a Hotmart, según la base comercial corregida del 2026-11-26).
 - Nombre del asistente: "Asistente", por ahora. Se presenta como Asistente, el asistente virtual de Building Leaders Company. Se cambia en `perfil.nombreAsistente`.
 
 ## Qué no incluye a propósito

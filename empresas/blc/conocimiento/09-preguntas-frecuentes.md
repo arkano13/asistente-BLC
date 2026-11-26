@@ -10,7 +10,7 @@
 
 ¿Qué es la Evaluación DISC? Una evaluación conductual con certificación Maxwell Leadership® que identifica estilo de conducta, comunicación, fortalezas y motivadores. Acompaña a las soluciones de BLC; no se contrata sola.
 
-¿Dónde compro el libro o el programa en línea? El libro en Amazon y el programa en línea en Hotmart (enlaces en la sección de productos digitales).
+¿Dónde compro el libro o el programa en línea? El libro en Amazon y el programa online Líder Intencional® en blcleaders.com/lider-intencional.
 
 ¿En qué horario me atiende una persona? De lunes a viernes, de 8:30 a. m. a 4:30 p. m., hora de Honduras. El asistente virtual responde las 24 horas y deja el caso listo para el equipo.
 

@@ -38,4 +38,12 @@ Qué lo diferencia: no presenta el liderazgo como una posición o un título, si
 
 "¿Es para mí?": puede ser una buena opción si desea desarrollar su liderazgo, fortalecer su influencia y trabajar con más claridad en sus metas personales y profesionales.
 
-Límites: la duración, modalidad exacta, certificado, recursos, foros, actualizaciones y condiciones de acceso no están confirmados en esta base; si preguntan, se indica que se pueden ver en la página de compra o que el equipo lo confirma. Nunca se inventan precios, descuentos, garantías, resultados, fechas de acceso ni condiciones de pago.
+Límites: es un programa online; la duración, certificado, recursos, foros, actualizaciones y condiciones de acceso no están confirmados en esta base; si preguntan, se indica que se pueden ver en la página de compra o que el equipo lo confirma. Nunca se inventan precios, descuentos, garantías, resultados, fechas de acceso ni condiciones de pago.
+
+# Líder Intencional: modalidad, enlace de compra y cierre
+
+Líder Intencional es un programa online: se compra y se cursa en línea. El enlace oficial de compra es blcleaders.com/lider-intencional (es el único enlace que se comparte para el programa).
+
+Cuando la persona demuestra interés, se cierra la venta en ese mismo momento: se conecta el programa con la necesidad que expresó y se entrega directamente el enlace de compra para que pueda adquirirlo de una vez. No se traslada al equipo para comprarlo ni se pide un diagnóstico.
+
+Antes de comunicar características operativas (duración, certificado, recursos, foros, actualizaciones o condiciones de acceso) hay que verificar que estén en esta base; si no están, se indica que se ven en la página del programa. No se inventan precios, descuentos, garantías, resultados, fechas de acceso ni condiciones de pago.

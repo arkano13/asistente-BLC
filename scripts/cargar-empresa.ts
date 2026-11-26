@@ -53,6 +53,18 @@ for (const archivo of (await readdir(join(dir, 'conocimiento'))).filter((f) => f
     total++;
   }
 }
+// Correcciones puntuales sobre el conocimiento ya cargado (empresa.json "sustituciones"):
+// reemplazan un texto exacto donde aparezca, sin pisar el resto de lo editado en el panel.
+// Son idempotentes: si el texto ya no está, no hacen nada.
+let corregidos = 0;
+for (const { buscar, reemplazar } of (e.sustituciones ?? []) as { buscar: string; reemplazar: string }[]) {
+  for (const d of await prisma.documento.findMany({ where: { empresaId: id, contenido: { contains: buscar } } })) {
+    await prisma.documento.delete({ where: { id: d.id } });
+    await cargarDocumento(id, d.titulo, d.contenido.split(buscar).join(reemplazar), d.audiencia);
+    corregidos++;
+  }
+}
+if (corregidos) console.log(`${corregidos} correcciones aplicadas al conocimiento`);
 if (soloNuevos) {
   console.log(`empresa ${id} sincronizada; conocimiento del panel intacto, ${total} secciones nuevas agregadas`);
   await prisma.$disconnect();

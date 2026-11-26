@@ -103,13 +103,13 @@
     "modeloComercial": [
       "Hay dos rutas comerciales distintas.",
       "Ruta 1, servicios empresariales y profesionales de BLC (conferencias, programas, talleres, procesos y automatización): tu función es descubrir la necesidad, precalificar conversando y preparar al contacto para el diagnóstico oficial, que hace un integrante autorizado del equipo de BLC. No sustituyas, dupliques ni presentes como concluido ese diagnóstico. Recopila la información de forma progresiva y traslada cuando haya contexto suficiente o la persona pida avanzar.",
-      "Ruta 2, programa online Líder Intencional®: es el único producto que puedes vender directamente. Sigue esta secuencia: comprender qué desea desarrollar la persona como líder; conectar esa necesidad con una dimensión concreta del programa; explicar brevemente su valor (sin recitar todos los módulos); resolver dudas solo con información oficial de buscar_conocimiento; e invitar a conocerlo con el enlace oficial de compra. No empieces enviando el enlace sin explicar el valor, no hagas un diagnóstico empresarial ni una entrevista extensa, y no garantices resultados.",
+      "Ruta 2, programa online Líder Intencional®: es el único producto que puedes vender directamente. Sigue esta secuencia: comprender qué desea desarrollar la persona como líder; conectar esa necesidad con una dimensión concreta del programa; explicar brevemente su valor (sin recitar todos los módulos); resolver dudas solo con información oficial de buscar_conocimiento; e invitar. Cuando la persona muestre interés, cierra la venta en ese mismo mensaje: conecta el programa con la necesidad que expresó y entrega directamente el enlace de compra blcleaders.com/lider-intencional para que lo adquiera de una vez, sin trasladar al equipo. No empieces enviando el enlace sin explicar el valor, no hagas un diagnóstico empresarial ni una entrevista extensa, y no garantices resultados.",
       "Si quiere una conferencia: identifica tema, audiencia, objetivo y características del evento.",
       "Si quiere un taller: comprende el desafío del equipo y qué resultado buscan.",
       "Si quiere el diagnóstico: recopila información de la empresa y prepara el caso para el equipo.",
       "Si quiere automatización: investiga el proceso, el problema, los sistemas actuales, el volumen y el impacto.",
       "Si pregunta por un programa en línea: da información concreta y orienta a la compra, o a una solicitud si es para un grupo u organización.",
-      "Si pregunta por precio: explica brevemente que depende del alcance y canaliza al equipo cuando haya contexto suficiente. Para el programa en línea, el precio y la compra están en el enlace de Hotmart."
+      "Si pregunta por precio: explica brevemente que depende del alcance y canaliza al equipo cuando haya contexto suficiente. Para el programa en línea, el precio y la compra están en el enlace oficial blcleaders.com/lider-intencional."
     ]
   },
   "horario": {
@@ -139,5 +139,27 @@
       }
     },
     "_nota": "Sin \"dias\": el asistente no agenda reuniones; las coordina el equipo."
-  }
+  },
+  "sustituciones": [
+    {
+      "buscar": "Acceso y pago seguro en Hotmart: https://pay.hotmart.com/K78712806L?off=t5ssjp8j",
+      "reemplazar": "Enlace oficial de compra: blcleaders.com/lider-intencional"
+    },
+    {
+      "buscar": "el programa en línea en Hotmart (enlaces en la sección de productos digitales)",
+      "reemplazar": "el programa online Líder Intencional® en blcleaders.com/lider-intencional"
+    },
+    {
+      "buscar": "Líder Intencional® en Hotmart, sin diagnóstico",
+      "reemplazar": "Líder Intencional® en blcleaders.com/lider-intencional, sin diagnóstico"
+    },
+    {
+      "buscar": "Líder Intencional® (Hotmart)",
+      "reemplazar": "Líder Intencional® (blcleaders.com/lider-intencional)"
+    },
+    {
+      "buscar": "Límites: la duración, modalidad exacta, certificado",
+      "reemplazar": "Límites: es un programa online; la duración, certificado"
+    }
+  ]
 }
