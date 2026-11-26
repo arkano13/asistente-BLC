@@ -1,6 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { prisma, type Contacto, type Empresa, type Rol } from '../db/prisma.js';
 import { agendaActiva, enHorarioHumano, horarioDe } from '../db/repo.js';
+import { reglaDeAvance } from '../agent/memory.js';
 import { buscar } from '../knowledge/index.js';
 import { enviarTexto, marcarNoLeido } from '../queue/index.js';
 
@@ -109,6 +110,12 @@ const herramientas: Herramienta[] = [
     },
     run: async ({ interes, nombre, organizacion, email, presupuesto, notas }, { empresa, contacto }) => {
       if (!nombre.trim()) return { ok: false, error: 'Falta el nombre: pídelo antes de registrar.' };
+      // Regla de avance: no se registra mientras falte entender el caso (salvo que pida humano, queja o urgencia).
+      if (contacto.estado) {
+        const { decision, faltan } = reglaDeAvance(contacto.estado);
+        if (decision === 'entender') return { ok: false, error: `Todavía no: falta entender ${faltan.join('; ')}. Pregunta solo lo primero.` };
+        if (decision === 'vender_programa') return { ok: false, error: 'Es el programa online: no se registra, entrega el enlace oficial de compra.' };
+      }
       const datos = {
         interes,
         email: email || null,

@@ -18,6 +18,12 @@ export async function atenderChat(empresa: Empresa, contacto: Contacto) {
     return null;
   }
 
+  // Ficha del prospecto y regla de avance al día, incluido lo que acaba de escribir.
+  const estado = await actualizarEstado(empresa, contacto, nuevos).catch((err) => {
+    logger.error({ err }, 'estado de la conversación');
+    return contacto.estado;
+  });
+  contacto = { ...contacto, estado: estado as Contacto['estado'] };
   const previos = await historial(contacto.id, config.HISTORY_LIMIT);
   const r = await ejecutarAgente(empresa, contacto, aMensajes(previos, nuevos));
   await marcarProcesados(ids);
@@ -36,11 +42,6 @@ export function iniciarWorkerAgente() {
       if (!empresa || !contacto) return;
       const r = await atenderChat(empresa, contacto);
       if (r?.texto) await enviarTexto(empresaId, jid, r.texto, r.escalado);
-      // Antes de liberar el chat: el próximo turno recibe el estado ya actualizado.
-      if (r) {
-        const actual = await getContacto(empresaId, jid);
-        if (actual) await actualizarEstado(empresa, actual).catch((err) => logger.error({ err }, 'estado de la conversación'));
-      }
     },
     { connection: redis, concurrency: 10 },
   );
