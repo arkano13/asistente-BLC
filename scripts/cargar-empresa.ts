@@ -35,21 +35,28 @@ const [docs, sinTexto] = await Promise.all([
   prisma.documento.count({ where: { empresaId: id } }),
   prisma.documento.count({ where: { empresaId: id, contenido: '' } }),
 ]);
-if (siVacio && docs > 0 && sinTexto === 0) {
-  console.log(`empresa ${id} sincronizada; conocimiento sin cambios (se edita desde el panel)`);
-  await prisma.$disconnect();
-  process.exit(0);
-}
-await prisma.documento.deleteMany({ where: { empresaId: id } });
+// Con --si-vacio el conocimiento editado en el panel se respeta: solo se agregan secciones nuevas
+// (títulos que no existen). Sin la bandera, o con documentos sin texto, se recarga todo.
+const soloNuevos = siVacio && docs > 0 && sinTexto === 0;
+const existentes = new Set(
+  soloNuevos ? (await prisma.documento.findMany({ where: { empresaId: id }, select: { titulo: true } })).map((d) => d.titulo) : [],
+);
+if (!soloNuevos) await prisma.documento.deleteMany({ where: { empresaId: id } });
 let total = 0;
 for (const archivo of (await readdir(join(dir, 'conocimiento'))).filter((f) => f.endsWith('.md')).sort()) {
   const texto = await readFile(join(dir, 'conocimiento', archivo), 'utf8');
   const audiencia = /<!--\s*audiencia:\s*EQUIPO\s*-->/.test(texto) ? 'EQUIPO' : 'TODOS';
   for (const seccion of texto.split(/^# /m).filter((s) => s.trim())) {
     const [titulo, ...cuerpo] = seccion.split('\n');
+    if (existentes.has(titulo.trim())) continue;
     await cargarDocumento(id, titulo.trim(), cuerpo.join('\n').replace(/<!--.*?-->/g, '').trim(), audiencia);
     total++;
   }
+}
+if (soloNuevos) {
+  console.log(`empresa ${id} sincronizada; conocimiento del panel intacto, ${total} secciones nuevas agregadas`);
+  await prisma.$disconnect();
+  process.exit(0);
 }
 console.log(`empresa ${id} sincronizada: ${total} documentos de conocimiento`);
 await prisma.$disconnect();

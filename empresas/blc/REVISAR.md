@@ -7,6 +7,7 @@ Fuentes usadas: `BLC Identidad de Marca.docx`, `BLC_Manual_Maestro_Asistente_Wha
 1. **Enlace de Hotmart**: la web usa el mismo enlace para "Adquirir conferencia" y para el programa en línea. El asistente solo lo da para el programa en línea; las conferencias las coordina el equipo.
 2. **Feriados de Honduras**: no están configurados. Solo afectan el aviso de "responderemos en el siguiente horario hábil".
 3. **Preguntas frecuentes** (`conocimiento/09-preguntas-frecuentes.md`): las redacté a partir de la web. Hay que revisarlas antes de producción.
+5. **Modalidad de talleres y programas** (`conocimiento/10-como-contratar.md`): la base no dice si se pueden dar en línea. El asistente responde que el equipo lo confirma; si hay una respuesta oficial, agrégala en Conocimiento.
 4. **Equipo interno**: no hay números del equipo con rol EQUIPO ni avisos a otros números (`avisarA` vacío), como se pidió.
 
 ## Definido
