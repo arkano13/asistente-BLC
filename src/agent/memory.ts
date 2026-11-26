@@ -29,7 +29,10 @@ export async function actualizarResumen(empresa: Empresa, contacto: Contacto) {
 
 /** Estado estructurado de la conversación: el modelo lo recibe en cada turno como fuente de verdad. */
 export interface EstadoConversacion {
+  intencion: string;
   necesidad: string;
+  brecha: string;
+  siguiente_paso_deseado: string;
   contexto: string;
   objetivo: string;
   datos: { nombre: string; organizacion: string; cargo: string; email: string };
@@ -45,9 +48,12 @@ const texto = { type: 'string' } as const;
 const ESQUEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['necesidad', 'contexto', 'objetivo', 'datos', 'ultima_pregunta_asistente', 'ultima_pregunta_respondida', 'preguntas_ya_hechas', 'dato_pendiente', 'etapa', 'accion_pendiente'],
+  required: ['intencion', 'necesidad', 'brecha', 'siguiente_paso_deseado', 'contexto', 'objetivo', 'datos', 'ultima_pregunta_asistente', 'ultima_pregunta_respondida', 'preguntas_ya_hechas', 'dato_pendiente', 'etapa', 'accion_pendiente'],
   properties: {
+    intencion: { type: 'string', description: 'Qué busca: conferencia, taller, programa, proceso, automatización, diagnóstico, programa en línea, precio, hablar con alguien, queja u otra. Vacío si no está claro.' },
     necesidad: { type: 'string', description: 'Lo que la persona dijo que necesita, con sus palabras. Vacío si aún no lo dijo.' },
+    brecha: { type: 'string', description: 'Qué está ocurriendo hoy y qué impacto tiene, si lo explicó.' },
+    siguiente_paso_deseado: { type: 'string', description: 'Lo que la persona dijo que quiere hacer a continuación (diagnóstico, propuesta, comprar, hablar con alguien). Vacío si no lo dijo.' },
     contexto: { type: 'string', description: 'Datos de su negocio o situación que explicó (rubro, tamaño, cómo trabaja hoy). Vacío si no dio.' },
     objetivo: { type: 'string', description: 'Resultado que espera lograr, si lo dijo.' },
     datos: {

@@ -16,6 +16,8 @@ export interface Perfil {
   /** Biblioteca de mensajes oficiales: el agente adapta el texto sin cambiar su intención. */
   mensajesOficiales?: { situacion: string; texto: string }[];
   instruccionesEquipo?: string;
+  /** Rutas comerciales de la empresa (qué se precalifica, qué se vende directo, ruta por intención). */
+  modeloComercial?: string[];
 }
 
 /** dias: "0"=domingo ... "6"=sábado -> ["09:00","17:00"]. */
