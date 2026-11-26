@@ -49,7 +49,7 @@ export interface EstadoConversacion {
   pide_humano: boolean;
   queja: boolean;
   urgente: boolean;
-  ruta: 'servicios' | 'programa_online' | 'sin_definir';
+  ruta: 'servicios' | 'programa_online' | 'equipo_lider_intencional' | 'sin_definir';
   ultima_pregunta_asistente: string;
   preguntas_ya_hechas: string[];
 }
@@ -82,7 +82,11 @@ const ESQUEMA = {
     pide_humano: { type: 'boolean', description: 'Pidió hablar con una persona del equipo.' },
     queja: { type: 'boolean', description: 'Expresó una queja o molestia.' },
     urgente: { type: 'boolean', description: 'Planteó una urgencia que no puede esperar.' },
-    ruta: { type: 'string', enum: ['servicios', 'programa_online', 'sin_definir'], description: 'programa_online si busca Líder Intencional o formarse por su cuenta; servicios si es para su organización o un evento.' },
+    ruta: {
+      type: 'string',
+      enum: ['servicios', 'programa_online', 'equipo_lider_intencional', 'sin_definir'],
+      description: 'programa_online si busca Líder Intencional (programa, curso) para sí mismo o formarse por su cuenta; equipo_lider_intencional si quiere Líder Intencional para su equipo u organización; servicios para otras soluciones de BLC (conferencias, talleres, programas, procesos, automatización, diagnóstico).',
+    },
     ultima_pregunta_asistente: texto('Última pregunta que hizo el asistente, resumida. Vacío si ninguna.'),
     preguntas_ya_hechas: { type: 'array', items: { type: 'string' }, description: 'Preguntas que el asistente ya hizo, cortas.' },
   },
@@ -131,6 +135,11 @@ export function reglaDeAvance(estado: unknown): { decision: Decision; faltan: st
   const p = e?.prospecto;
   const tiene = (k: keyof Prospecto) => !!p?.[k]?.trim();
   if (e?.pide_humano || e?.queja || e?.urgente) return { decision: 'trasladar_ya', faltan: [], opcionales: [] };
+  if (e?.ruta === 'equipo_lider_intencional') {
+    const faltan = [!tiene('problema') && 'qué desean desarrollar como equipo', !tiene('tamano') && 'cuántas personas participarían'].filter(Boolean) as string[];
+    if (faltan.length) return { decision: 'entender', faltan, opcionales: [] };
+    return { decision: tiene('nombre') ? 'registrar_y_trasladar' : 'pedir_nombre', faltan: tiene('nombre') ? [] : [PREGUNTA.nombre!], opcionales: [] };
+  }
   if (e?.ruta === 'programa_online') return { decision: 'vender_programa', faltan: tiene('problema') ? [] : ['qué quiere desarrollar como líder'], opcionales: [] };
   const faltan: string[] = [];
   if (!tiene('intencion')) faltan.push(PREGUNTA.intencion!);

@@ -8,7 +8,7 @@ const DECISION: Record<Decision, string> = {
   pedir_nombre: 'PEDIR EL NOMBRE. Aceptó avanzar: pide solo su nombre, en una línea, y al recibirlo registra y traslada.',
   registrar_y_trasladar: 'REGISTRAR Y TRASLADAR. Si "Acciones ya realizadas" no lo muestra, usa registrar_lead y luego escalar_a_humano con un resumen de la ficha.',
   trasladar_ya: 'TRASLADAR YA. Pidió una persona, tiene una queja o una urgencia: usa escalar_a_humano ahora, sin más preguntas.',
-  vender_programa: 'VENDER EL PROGRAMA ONLINE. Comprende qué quiere desarrollar, conéctalo con el programa, explica su valor en breve y, si muestra interés, entrega el enlace oficial de compra. No registres ni traslades.',
+  vender_programa: 'PROGRAMA ONLINE INDIVIDUAL. Venta consultiva: comprende qué quiere desarrollar y por qué le importa, conéctalo con el programa, amplía solo lo relevante y resuelve dudas. Comparte el enlace oficial y el siguiente paso cuando pida comprar o confirme su interés después de entender el valor, no ante el primer interés. No registres ni traslades.',
 };
 
 /** Ficha del prospecto y regla de avance, calculadas por el sistema con el último mensaje incluido. */

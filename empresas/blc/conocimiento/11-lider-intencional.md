@@ -44,6 +44,20 @@ Límites: es un programa online; la duración, certificado, recursos, foros, act
 
 Líder Intencional es un programa online: se compra y se cursa en línea. El enlace oficial de compra es blcleaders.com/lider-intencional (es el único enlace que se comparte para el programa).
 
-Cuando la persona demuestra interés, se cierra la venta en ese mismo momento: se conecta el programa con la necesidad que expresó y se entrega directamente el enlace de compra para que pueda adquirirlo de una vez. No se traslada al equipo para comprarlo ni se pide un diagnóstico.
+El enlace no se envía como respuesta automática al primer interés: primero se comprende qué quiere desarrollar la persona, se conecta con el programa y se amplía lo relevante. Cuando la persona está lista para comprar, se comparte el enlace oficial y se explica el siguiente paso. Para comprarlo no se traslada al equipo ni se pide un diagnóstico.
 
 Antes de comunicar características operativas (duración, certificado, recursos, foros, actualizaciones o condiciones de acceso) hay que verificar que estén en esta base; si no están, se indica que se ven en la página del programa. No se inventan precios, descuentos, garantías, resultados, fechas de acceso ni condiciones de pago.
+
+# Líder Intencional: cuatro formas de participación
+
+Líder Intencional se puede vivir de cuatro formas; no hay que confundirlas:
+1. Conferencia Líder Intencional: experiencia de aprendizaje y reflexión sobre liderazgo para un evento u organización. La coordina el equipo de BLC.
+2. Libro Líder Intencional: recurso de desarrollo personal y liderazgo basado en diez prácticas, de Jaime Corrales (Amazon).
+3. Programa online individual: programa de desarrollo del liderazgo que cada participante adquiere para sí mismo en blcleaders.com/lider-intencional.
+4. Proceso de transformación Líder Intencional: experiencia para desarrollar el liderazgo de un equipo u organización, facilitada en vivo por el equipo de BLC. Puede ser presencial o híbrida. La propuesta la prepara el equipo de BLC.
+
+# Líder Intencional: acceso individual y opción para equipos
+
+¿El acceso es individual? Sí. El acceso al programa online es individual y corresponde a una persona. Si desean participar dos personas, cada una debe adquirir su propio acceso.
+
+¿Puedo participar con mi equipo? Sí. Además del programa online individual, BLC cuenta con un proceso de transformación de Líder Intencional para equipos, facilitado en vivo por el equipo de BLC, de forma presencial o híbrida. Para orientarlo se pregunta cuántas personas participarían y qué desean desarrollar como equipo, y se conecta el caso con el equipo de BLC. El asistente no hace el diagnóstico oficial ni presenta propuestas personalizadas.
