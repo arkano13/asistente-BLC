@@ -11,9 +11,8 @@ const Env = z.object({
   HISTORY_LIMIT: z.coerce.number().default(20),
   MAX_TOOL_TURNS: z.coerce.number().default(6),
   DEBOUNCE_MS: z.coerce.number().default(2500),
-  // Notas de voz: se transcriben con Gemini, como en hotelbot. Sin la clave, el bot pide escribir.
-  GEMINI_API_KEY: z.string().optional(),
-  GEMINI_MODEL: z.string().default('gemini-3.1-flash-lite'),
+  // Notas de voz: Whisper propio en Railway (servicio "whisper", red privada). Sin la URL, el bot pide escribir.
+  WHISPER_URL: z.string().url().optional(),
   MAX_SEGUNDOS_AUDIO: z.coerce.number().default(180),
 });
 
