@@ -14,21 +14,24 @@ export async function transcribirNota(msg: WAMessage, sock: WASocket): Promise<s
   const inicio = Date.now();
   try {
     const buffer = await downloadMediaMessage(msg, 'buffer', {}, { logger: logger as never, reuploadRequest: sock.updateMediaMessage });
-    const url = `${config.WHISPER_URL.replace(/\/$/, '')}/asr?task=transcribe&language=es&output=json&encode=true`;
+    // initial_prompt orienta a Whisper con los nombres propios que más se repiten en las notas.
+    const pista = encodeURIComponent('Building Leaders Company, BLC, Líder Intencional, Jaime Corrales.');
+    const url = `${config.WHISPER_URL.replace(/\/$/, '')}/asr?task=transcribe&language=es&output=json&encode=true&initial_prompt=${pista}`;
     // El servicio whisper duerme cuando no hay notas (Railway serverless): la primera petición lo despierta
-    // y puede fallar o tardar mientras arranca y carga el modelo, así que se reintenta.
+    // y la conexión se rechaza unos 20-30 s mientras arranca (medido el 2026-11-27: 32 s en frío, 1,4 s en
+    // caliente). Se reintenta cada 3 s hasta 90 s para no sumar espera de más.
     let res: Response | null = null;
-    for (let intento = 1; intento <= 4 && !res?.ok; intento++) {
+    for (let intento = 1; Date.now() - inicio < 90_000 && !res?.ok; intento++) {
       try {
         const form = new FormData();
         form.append('audio_file', new Blob([new Uint8Array(buffer)], { type: audio.mimetype ?? 'audio/ogg' }), 'nota.ogg');
         res = await fetch(url, { method: 'POST', body: form, signal: AbortSignal.timeout(120_000) });
         if (!res.ok && res.status < 500) break;
       } catch (err) {
-        if (intento === 4) throw err;
-        logger.info({ intento }, 'whisper despertando: reintento');
+        if (Date.now() - inicio >= 87_000) throw err;
+        if (intento === 1) logger.info('whisper despertando: reintento');
       }
-      if (!res?.ok) await new Promise((r) => setTimeout(r, 5000 * intento));
+      if (!res?.ok) await new Promise((r) => setTimeout(r, 3000));
     }
     if (!res?.ok) {
       logger.error({ status: res?.status, cuerpo: (await res?.text())?.slice(0, 300) }, 'transcripción fallida');
