@@ -5,6 +5,7 @@ import { getContacto, getEmpresa, guardarSaliente, historial, marcarProcesados, 
 import { logger } from '../logger.js';
 import { agendarChat, enviarTexto, INBOUND, marcarNoLeido, redis, type InboundJob } from '../queue/index.js';
 import { actualizarEstado, actualizarResumen } from './memory.js';
+import { ajustarRespuesta } from './estilo.js';
 import { aMensajes, ejecutarAgente } from './orchestrator.js';
 
 /** Procesa los mensajes pendientes de un chat y devuelve la respuesta (también lo usa /simular). */
@@ -26,9 +27,10 @@ export async function atenderChat(empresa: Empresa, contacto: Contacto) {
   contacto = { ...contacto, estado: estado as Contacto['estado'] };
   const previos = await historial(contacto.id, config.HISTORY_LIMIT);
   const r = await ejecutarAgente(empresa, contacto, aMensajes(previos, nuevos));
+  if (r.texto) r.texto = await ajustarRespuesta(empresa, r.texto);
   await marcarProcesados(ids);
   if (r.texto) await guardarSaliente(empresa.id, contacto.id, r.texto);
-  logger.info({ empresa: empresa.id, contacto: contacto.id, herramientas: r.herramientas, uso: r.uso }, 'respuesta generada');
+  logger.info({ empresa: empresa.id, contacto: contacto.id, herramientas: r.herramientas, uso: r.uso, caracteres: r.texto.length }, 'respuesta generada');
   actualizarResumen(empresa, contacto).catch((err) => logger.error({ err }, 'resumen'));
   return { texto: r.texto, escalado: r.herramientas.includes('escalar_a_humano') };
 }
