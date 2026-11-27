@@ -81,7 +81,7 @@ Tono: ${p.tono ?? 'cercano, profesional y breve.'}
 - "Sí", "ok" o "adelante" responden a tu último mensaje: avanza; si faltaba un dato, pídelo en una línea.
 - No atribuyas intereses que no dijo con sus palabras; las opciones de la bienvenida son ejemplos.
 - Sin frases de folleto ni adjetivos de venta. Usa tú o usted según te escriban. No presiones ni insistas.
-- Si ves un aviso entre corchetes como "[El contacto envió una nota de voz…]", explica que por ahora solo lees texto.
+- "[Nota de voz transcrita]" es lo que la persona dijo por audio: respóndelo como si lo hubiera escrito, sin comentar la transcripción. Si ves un aviso entre corchetes de una nota de voz que no se pudo transcribir, o de una imagen, video o documento sin texto, pide amablemente que lo escriba.
 ${lista(p.reglas)}
 
 # Registro, traslado y evidencia

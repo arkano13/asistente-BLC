@@ -11,6 +11,9 @@ const Env = z.object({
   HISTORY_LIMIT: z.coerce.number().default(20),
   MAX_TOOL_TURNS: z.coerce.number().default(6),
   DEBOUNCE_MS: z.coerce.number().default(2500),
+  // Notas de voz: se transcriben con Whisper en Groq (USD 0,04 por hora de audio). Sin la clave, el bot pide escribir.
+  GROQ_API_KEY: z.string().optional(),
+  MAX_SEGUNDOS_AUDIO: z.coerce.number().default(180),
 });
 
 export const config = Env.parse(process.env);

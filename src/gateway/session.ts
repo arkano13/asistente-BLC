@@ -20,6 +20,7 @@ import { buscarContacto, getContacto, getEmpresa, guardarEntrante, numeroPermiti
 import { logger } from '../logger.js';
 import { agendarChat, codigoKey, enviadoKey, nombreSalida, qrKey, redis, renovarLock, soltarLock, statusKey, tomarLock, ultimoKey, type OutboundJob } from '../queue/index.js';
 import { usarAuthPostgres } from './auth-state.js';
+import { transcribirNota } from './transcribir.js';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -44,7 +45,7 @@ function extraerTexto(msg: WAMessage): string | null {
     m.documentMessage?.caption ??
     m.buttonsResponseMessage?.selectedDisplayText ??
     m.listResponseMessage?.title ??
-    (m.audioMessage ? '[El contacto envió una nota de voz. El asistente no puede escucharla.]'
+    (m.audioMessage ? '[El contacto envió una nota de voz que no se pudo transcribir.]'
       : m.imageMessage ? '[El contacto envió una imagen sin texto.]'
       : m.videoMessage ? '[El contacto envió un video sin texto.]'
       : m.documentMessage ? '[El contacto envió un documento sin texto.]'
@@ -174,8 +175,16 @@ export class TenantSession {
       return;
     }
     this.log.info({ chat: jid }, 'mensaje recibido');
+    // Nota de voz: se transcribe y sigue el flujo normal como texto (solo para números que pasan el filtro).
+    let contenido = text;
+    if (msg.message?.audioMessage && this.sock) {
+      const transcrito = await transcribirNota(msg, this.sock);
+      if (transcrito) contenido = `[Nota de voz transcrita] ${transcrito}`.slice(0, MAX_TEXTO);
+      else if ((msg.message.audioMessage.seconds ?? 0) > config.MAX_SEGUNDOS_AUDIO)
+        contenido = '[El contacto envió una nota de voz demasiado larga para transcribirla.]';
+    }
     const contacto = await sincronizarRol(await upsertContacto(this.empresaId, jid, telefono, msg.pushName ?? null, original), empresa);
-    if (!(await guardarEntrante(this.empresaId, contacto.id, text, msg.key.id))) return;
+    if (!(await guardarEntrante(this.empresaId, contacto.id, contenido, msg.key.id))) return;
 
     await redis.set(ultimoKey(this.empresaId, contacto.jid), JSON.stringify({ key: msg.key, messageTimestamp: msg.messageTimestamp }), 'EX', 7 * 86400);
     // En modo HUMANO o con un traslado abierto no se marca como leído: el equipo ve el chat pendiente en su teléfono.
