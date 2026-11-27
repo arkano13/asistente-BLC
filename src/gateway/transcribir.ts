@@ -14,12 +14,24 @@ export async function transcribirNota(msg: WAMessage, sock: WASocket): Promise<s
   const inicio = Date.now();
   try {
     const buffer = await downloadMediaMessage(msg, 'buffer', {}, { logger: logger as never, reuploadRequest: sock.updateMediaMessage });
-    const form = new FormData();
-    form.append('audio_file', new Blob([new Uint8Array(buffer)], { type: audio.mimetype ?? 'audio/ogg' }), 'nota.ogg');
     const url = `${config.WHISPER_URL.replace(/\/$/, '')}/asr?task=transcribe&language=es&output=json&encode=true`;
-    const res = await fetch(url, { method: 'POST', body: form, signal: AbortSignal.timeout(120_000) });
-    if (!res.ok) {
-      logger.error({ status: res.status, cuerpo: (await res.text()).slice(0, 300) }, 'transcripción fallida');
+    // El servicio whisper duerme cuando no hay notas (Railway serverless): la primera petición lo despierta
+    // y puede fallar o tardar mientras arranca y carga el modelo, así que se reintenta.
+    let res: Response | null = null;
+    for (let intento = 1; intento <= 4 && !res?.ok; intento++) {
+      try {
+        const form = new FormData();
+        form.append('audio_file', new Blob([new Uint8Array(buffer)], { type: audio.mimetype ?? 'audio/ogg' }), 'nota.ogg');
+        res = await fetch(url, { method: 'POST', body: form, signal: AbortSignal.timeout(120_000) });
+        if (!res.ok && res.status < 500) break;
+      } catch (err) {
+        if (intento === 4) throw err;
+        logger.info({ intento }, 'whisper despertando: reintento');
+      }
+      if (!res?.ok) await new Promise((r) => setTimeout(r, 5000 * intento));
+    }
+    if (!res?.ok) {
+      logger.error({ status: res?.status, cuerpo: (await res?.text())?.slice(0, 300) }, 'transcripción fallida');
       return null;
     }
     const texto = ((await res.json()) as { text?: string }).text?.trim();
