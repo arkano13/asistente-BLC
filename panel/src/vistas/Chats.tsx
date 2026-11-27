@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, type DetalleContacto, type FilaContacto } from '../api';
-import { Aviso, fecha, nombreContacto, useDatos } from '../util';
+import { Icono } from '../iconos';
+import { Avatar, Aviso, fecha, nombreContacto, useDatos, Vacio } from '../util';
 
 export function Chats({ base }: { base: string }) {
   const lista = useDatos<FilaContacto[]>(`${base}/contactos`, 10_000);
@@ -14,27 +15,43 @@ export function Chats({ base }: { base: string }) {
   return (
     <section className={abierto ? 'chats con-detalle' : 'chats'}>
       <div className="lista">
+        <p className="kicker">Conversaciones</p>
         <h2>Chats</h2>
-        <input placeholder="Buscar por nombre o número" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        <div className="buscador">
+          <Icono nombre="buscar" />
+          <input placeholder="Buscar por nombre o número" aria-label="Buscar chats" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
         <Aviso error={lista.error} />
-        {filas.map((c) => (
-          <button key={c.id} className={['fila', c.id === abierto && 'activa', c.escalado && 'escalada'].filter(Boolean).join(' ')} onClick={() => setAbierto(c.id)}>
-            <span className="fila-titulo">
-              {nombreContacto(c)}
-              {c.rol === 'EQUIPO' && <span className="etiqueta">equipo</span>}
-              {c.escalado && <span className="etiqueta alerta">escalado</span>}
-              <span className={c.modo === 'BOT' ? 'etiqueta bot' : 'etiqueta humano'}>{c.modo === 'BOT' ? 'bot' : 'humano'}</span>
-            </span>
-            <span className="fila-sub">
-              {c.ultimaDireccion === 'SALIENTE' ? '↩ ' : ''}
-              {c.ultimoMensaje ?? ''}
-            </span>
-            <span className="fila-fecha">{fecha(c.ultimoEn)}</span>
-          </button>
-        ))}
-        {lista.datos && !filas.length && <p className="tenue">Sin chats todavía.</p>}
+        <div className="filas">
+          {filas.map((c) => (
+            <button key={c.id} className={['fila', c.id === abierto && 'activa', c.escalado && 'escalada'].filter(Boolean).join(' ')} onClick={() => setAbierto(c.id)}>
+              <Avatar texto={nombreContacto(c)} alerta={c.escalado} />
+              <span className="fila-titulo">{nombreContacto(c)}</span>
+              <span className="fila-fecha">{fecha(c.ultimoEn)}</span>
+              <span className="fila-sub">
+                {c.ultimaDireccion === 'SALIENTE' ? 'Asistente: ' : ''}
+                {c.ultimoMensaje ?? ''}
+              </span>
+              <span className="fila-etiquetas">
+                {c.escalado && <span className="etiqueta alerta">escalado</span>}
+                {c.rol === 'EQUIPO' && <span className="etiqueta">equipo</span>}
+                {c.modo !== 'BOT' && <span className="etiqueta humano">pausado</span>}
+              </span>
+            </button>
+          ))}
+          {lista.datos && !filas.length && <Vacio>{busca ? 'Ningún chat coincide con la búsqueda.' : 'Sin chats todavía.'}</Vacio>}
+        </div>
       </div>
-      {abierto && <Detalle base={base} id={abierto} alCerrar={() => setAbierto(null)} alCambiar={lista.recargar} />}
+      {abierto ? (
+        <Detalle base={base} id={abierto} alCerrar={() => setAbierto(null)} alCambiar={lista.recargar} />
+      ) : (
+        <div className="detalle sin-seleccion">
+          <div>
+            <Icono nombre="chats" tam={32} />
+            <p>Elige un chat para ver la conversación.</p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -59,48 +76,54 @@ function Detalle({ base, id, alCerrar, alCambiar }: { base: string; id: string; 
     }
   };
 
-  if (!d.datos) return <div className="detalle">Cargando…</div>;
+  if (!d.datos) return <div className="detalle cargando">Cargando…</div>;
   const c = d.datos;
   return (
     <div className="detalle">
       <div className="detalle-cabecera">
-        <button className="secundario solo-movil" onClick={alCerrar}>
-          ← Volver
+        <button className="secundario solo-movil chico" aria-label="Volver a la lista" onClick={alCerrar}>
+          <Icono nombre="volver" tam={16} />
         </button>
-        <div>
+        <Avatar texto={nombreContacto(c)} alerta={c.escalamientos.length > 0} />
+        <div style={{ minWidth: 0 }}>
           <strong>{nombreContacto(c)}</strong>
           {c.nombre && <div className="tenue">{c.telefono ? `+${c.telefono}` : c.jid}</div>}
         </div>
         <span className="espacio" />
-        <button
-          className="peligro"
-          onClick={async () => {
-            if (!confirm('Se borra toda la conversación de este número (mensajes, memoria, leads y escalamientos). El próximo mensaje empieza desde cero. ¿Seguir?')) return;
-            try {
-              await api.del(`${base}/contactos/${id}`);
-              alCerrar();
-              alCambiar();
-            } catch (e) {
-              setError((e as Error).message);
-            }
-          }}
-        >
-          Reiniciar conversación
-        </button>
-        {c.modo === 'BOT' ? (
-          <button className="secundario" onClick={() => accion(() => api.post(`${base}/contactos/${id}/pausar`))}>
-            Pausar bot
+        <div className="botones detalle-acciones">
+          {c.modo === 'BOT' ? (
+            <button className="secundario chico" onClick={() => accion(() => api.post(`${base}/contactos/${id}/pausar`))}>
+              <Icono nombre="pausa" tam={16} />
+              Pausar bot
+            </button>
+          ) : (
+            <button className="chico" onClick={() => accion(() => api.post(`${base}/contactos/${id}/devolver-al-bot`))}>
+              <Icono nombre="play" tam={16} />
+              Devolver al bot
+            </button>
+          )}
+          <button
+            className="peligro chico"
+            onClick={async () => {
+              if (!confirm('Se borra toda la conversación de este número (mensajes, memoria, leads y escalamientos). El próximo mensaje empieza desde cero. ¿Seguir?')) return;
+              try {
+                await api.del(`${base}/contactos/${id}`);
+                alCerrar();
+                alCambiar();
+              } catch (e) {
+                setError((e as Error).message);
+              }
+            }}
+          >
+            <Icono nombre="reiniciar" tam={16} />
+            Reiniciar
           </button>
-        ) : (
-          <button onClick={() => accion(() => api.post(`${base}/contactos/${id}/devolver-al-bot`))}>Devolver al bot</button>
-        )}
+        </div>
       </div>
       <div className="detalle-info">
-        <span>
-          Modo: <strong>{c.modo === 'BOT' ? 'atiende el bot' : 'atiende una persona (bot pausado)'}</strong>
-        </span>
+        <span className={c.modo === 'BOT' ? 'etiqueta bot' : 'etiqueta humano'}>{c.modo === 'BOT' ? 'Atiende el bot' : 'Bot pausado: atiende una persona'}</span>
         <label className="en-linea">
-          Rol:
+          Rol
           <select value={c.rol} onChange={(e) => accion(() => api.patch(`${base}/contactos/${id}`, { rol: e.target.value }))}>
             <option value="CLIENTE">Cliente</option>
             <option value="EQUIPO">Equipo</option>
@@ -108,7 +131,12 @@ function Detalle({ base, id, alCerrar, alCambiar }: { base: string; id: string; 
         </label>
       </div>
       {c.escalamientos.length > 0 && (
-        <p className="alerta-caja">Escalado: {c.escalamientos.map((e) => e.motivo).join(' · ')}</p>
+        <p className="alerta-caja">
+          <Icono nombre="escalamientos" />
+          <span>
+            <strong>Escalado:</strong> {c.escalamientos.map((e) => e.motivo).join(' · ')}
+          </span>
+        </p>
       )}
       {c.resumen && (
         <details className="resumen">
@@ -116,7 +144,9 @@ function Detalle({ base, id, alCerrar, alCambiar }: { base: string; id: string; 
           <pre>{c.resumen}</pre>
         </details>
       )}
-      <Aviso error={error ?? d.error} />
+      <div style={{ padding: '0 18px' }}>
+        <Aviso error={error ?? d.error} />
+      </div>
       <div className="mensajes">
         {c.mensajes.map((m) => (
           <div key={m.id} className={m.direccion === 'ENTRANTE' ? 'burbuja entrante' : 'burbuja saliente'}>
@@ -126,7 +156,10 @@ function Detalle({ base, id, alCerrar, alCambiar }: { base: string; id: string; 
         ))}
         <div ref={fin} />
       </div>
-      <p className="tenue pie">Para responder, escribe desde el WhatsApp del asistente: el bot se pausa solo en ese chat.</p>
+      <p className="tenue pie">
+        <Icono nombre="whatsapp" tam={16} />
+        Para responder, escribe desde el WhatsApp del asistente.
+      </p>
     </div>
   );
 }

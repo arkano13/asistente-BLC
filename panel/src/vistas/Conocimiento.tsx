@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api, type Documento } from '../api';
-import { Aviso, useDatos } from '../util';
+import { Icono } from '../iconos';
+import { Aviso, Encabezado, useDatos, Vacio } from '../util';
 
 type Borrador = Omit<Documento, 'id'> & { id?: string };
 const VACIO: Borrador = { titulo: '', contenido: '', audiencia: 'TODOS' };
@@ -33,7 +34,7 @@ export function Conocimiento({ base }: { base: string }) {
   if (editando)
     return (
       <section>
-        <h2>{editando.id ? 'Editar documento' : 'Nuevo documento'}</h2>
+        <Encabezado etiqueta="Conocimiento" titulo={editando.id ? 'Editar documento' : 'Nuevo documento'} />
         <div className="tarjeta">
           <label>
             Título
@@ -53,7 +54,7 @@ export function Conocimiento({ base }: { base: string }) {
             Contenido
             <textarea rows={18} value={editando.contenido} onChange={(e) => setEditando({ ...editando, contenido: e.target.value })} />
           </label>
-          <p className="tenue">No incluyas precios: el asistente los deriva al equipo.</p>
+          <p className="alerta-caja suave">No incluyas precios: el asistente los deriva al equipo.</p>
           <Aviso error={err} />
           <div className="botones">
             <button onClick={guardar} disabled={!editando.titulo.trim() || !editando.contenido.trim()}>
@@ -69,24 +70,34 @@ export function Conocimiento({ base }: { base: string }) {
 
   return (
     <section>
-      <div className="cabecera-seccion">
-        <h2>Conocimiento</h2>
-        <button onClick={() => setEditando(VACIO)}>Nuevo documento</button>
-      </div>
-      <p className="tenue">Lo que el asistente puede consultar para responder. Los cambios aplican al instante.</p>
+      <Encabezado
+        etiqueta="Base del asistente"
+        titulo="Conocimiento"
+        accion={
+          <button onClick={() => setEditando(VACIO)}>
+            <Icono nombre="mas" />
+            Nuevo documento
+          </button>
+        }
+      >
+        Lo que el asistente consulta para responder. Los cambios aplican al instante.
+      </Encabezado>
+      {datos && !datos.length && <Vacio>Todavía no hay documentos.</Vacio>}
       <Aviso error={error ?? err} />
-      <div className="tabla">
+      <div className="lista-tarjetas">
         {datos?.map((d) => (
           <div key={d.id} className="tarjeta fila-tabla">
             <div>
               <strong>{d.titulo}</strong> {d.audiencia === 'EQUIPO' && <span className="etiqueta">interno</span>}
-              <div className="tenue recorte">{d.contenido.slice(0, 160)}</div>
+              <div className="tenue recorte" style={{ marginTop: 4 }}>{d.contenido.slice(0, 160)}</div>
             </div>
             <div className="botones">
-              <button className="secundario" onClick={() => setEditando(d)}>
+              <button className="secundario chico" onClick={() => setEditando(d)}>
+                <Icono nombre="editar" tam={16} />
                 Editar
               </button>
-              <button className="peligro" onClick={() => borrar(d)}>
+              <button className="peligro chico" onClick={() => borrar(d)}>
+                <Icono nombre="borrar" tam={16} />
                 Borrar
               </button>
             </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, ErrorApi, type Escalamiento, type Sesion } from './api';
-import { useDatos } from './util';
+import { Icono } from './iconos';
+import { Avatar, useDatos } from './util';
 import { Acceso } from './vistas/Acceso';
 import { Chats } from './vistas/Chats';
 import { Conocimiento } from './vistas/Conocimiento';
@@ -66,35 +67,42 @@ function Panel({
     setSesion(null);
   };
 
+  const cerrar = () => setMenuAbierto(() => false);
+
   return (
     <div className="app">
-      <header className="barra">
-        <button className="hamburguesa" aria-label="Menú" onClick={() => setMenuAbierto((v) => !v)}>
-          ☰{abiertos > 0 && <span className="punto" aria-label={`${abiertos} escalamientos abiertos`} />}
+      <header className="barra-movil">
+        <button aria-label="Abrir menú" aria-expanded={menuAbierto} onClick={() => setMenuAbierto((v) => !v)}>
+          <Icono nombre="menu" tam={22} />
+          {abiertos > 0 && <span className="punto" aria-label={`${abiertos} escalamientos abiertos`} />}
         </button>
-        <img className="logo" src="/logo-blc.png" alt="BLC" />
-        <span className="marca-nombre">Asistente</span>
+        <img className="logo" src="/logo-blc-blanco.png" alt="BLC" />
         <span className="seccion-actual">{titulo}</span>
-        <span className="espacio" />
-        <span className="tenue">{sesion.nombre}</span>
-        <button className="secundario" onClick={salir}>
-          Salir
-        </button>
       </header>
-      <nav className={menuAbierto ? 'menu abierto' : 'menu'}>
-        {SECCIONES.map((s) => (
-          <a
-            key={s.id}
-            href={`#${s.id}`}
-            className={s.id === seccion ? 'activo' : ''}
-            onClick={() => setMenuAbierto(() => false)}
-          >
-            {s.titulo}
-            {s.id === 'escalamientos' && abiertos > 0 && <span className="contador">{abiertos}</span>}
-          </a>
-        ))}
-        <div className="menu-pie">Building Leaders Company</div>
-      </nav>
+      {menuAbierto && <div className="velo" onClick={cerrar} />}
+      <aside className={menuAbierto ? 'menu abierto' : 'menu'}>
+        <img className="menu-logo" src="/logo-blc-blanco.png" alt="BLC Building Leaders Company" />
+        <p className="menu-producto">Asistente</p>
+        <nav aria-label="Secciones">
+          {SECCIONES.map((s) => (
+            <a key={s.id} href={`#${s.id}`} className={s.id === seccion ? 'activo' : ''} aria-current={s.id === seccion ? 'page' : undefined} onClick={cerrar}>
+              <Icono nombre={s.id} />
+              {s.titulo}
+              {s.id === 'escalamientos' && abiertos > 0 && <span className="contador">{abiertos}</span>}
+            </a>
+          ))}
+        </nav>
+        <div className="menu-usuario">
+          <Avatar texto={sesion.nombre} />
+          <div>
+            <strong>{sesion.nombre}</strong>
+            <span>Equipo BLC</span>
+          </div>
+          <button aria-label="Salir" title="Salir" onClick={salir}>
+            <Icono nombre="salir" />
+          </button>
+        </div>
+      </aside>
       <main className="contenido">
         {seccion === 'whatsapp' && <WhatsApp base={base} />}
         {seccion === 'chats' && <Chats base={base} />}

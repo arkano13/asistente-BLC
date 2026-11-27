@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { api, type Sesion, type Usuario } from '../api';
-import { Aviso, fecha, useDatos } from '../util';
+import { Avatar, Aviso, Encabezado, fecha, useDatos } from '../util';
 
 export function Usuarios({ base, sesion }: { base: string; sesion: Sesion }) {
   const { datos, error, recargar } = useDatos<Usuario[]>(`${base}/usuarios`);
@@ -28,24 +28,31 @@ export function Usuarios({ base, sesion }: { base: string; sesion: Sesion }) {
 
   return (
     <section>
-      <h2>Usuarios del panel</h2>
+      <Encabezado etiqueta="Equipo" titulo="Usuarios del panel">
+        Personas del equipo con acceso a este panel.
+      </Encabezado>
+      <div className="rejilla-2">
       <Aviso error={error ?? err} />
-      <div className="tabla">
+      <div className="lista-tarjetas">
         {datos?.map((u) => (
           <div key={u.id} className="tarjeta fila-tabla">
-            <div>
-              <strong>{u.nombre}</strong> <span className="tenue">{u.email}</span>
-              <div className="tenue">Último acceso: {fecha(u.ultimoAcceso) || 'nunca'}</div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', minWidth: 0 }}>
+              <Avatar texto={u.nombre} />
+              <div style={{ minWidth: 0 }}>
+                <strong>{u.nombre}</strong>
+                <div className="tenue">{u.email}</div>
+                <div className="tenue">Último acceso: {fecha(u.ultimoAcceso) || 'nunca'}</div>
+              </div>
             </div>
             {u.id !== sesion.usuarioId && (
-              <button className="peligro" onClick={() => borrar(u)}>
+              <button className="peligro chico" onClick={() => borrar(u)}>
                 Quitar
               </button>
             )}
           </div>
         ))}
       </div>
-      <form className="tarjeta" onSubmit={crear}>
+      <form className="tarjeta" onSubmit={crear} style={{ margin: 0 }}>
         <h3>Agregar usuario</h3>
         <label>
           Nombre
@@ -59,8 +66,9 @@ export function Usuarios({ base, sesion }: { base: string; sesion: Sesion }) {
           Contraseña inicial (mínimo 10 caracteres)
           <input name="password" type="password" minLength={10} required autoComplete="new-password" />
         </label>
-        <button>Agregar</button>
+        <button>Agregar usuario</button>
       </form>
+      </div>
     </section>
   );
 }

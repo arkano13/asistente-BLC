@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, type Empresa } from '../api';
-import { Aviso, useDatos } from '../util';
+import { Icono } from '../iconos';
+import { Aviso, Encabezado, useDatos } from '../util';
 
 const ESTADOS: Record<string, string> = {
   open: 'Conectado',
@@ -42,38 +43,49 @@ export function WhatsApp({ base }: { base: string }) {
     };
   }, [wa.datos, base]);
 
+  const estado = wa.datos?.estado ?? 'desconocido';
   return (
     <section>
-      <h2>WhatsApp</h2>
+      <Encabezado etiqueta="Conexión" titulo="WhatsApp y filtro">
+        Estado del número del asistente, a quién responde y cuándo se pausa.
+      </Encabezado>
       <div className="tarjeta">
-        <p>
-          Estado: <strong>{ESTADOS[wa.datos?.estado ?? 'desconocido'] ?? wa.datos?.estado}</strong>
-          {wa.datos?.estado === 'open' && wa.datos.numero && <> · número vinculado: <strong>+{wa.datos.numero}</strong></>}
-        </p>
-        {wa.datos?.estado === 'open' && (
-          <button
-            className="peligro"
-            onClick={async () => {
-              if (!confirm('Se cierra la sesión de WhatsApp en el servidor y aparece un QR nuevo para vincular. ¿Seguir?')) return;
-              await api.post(`${base}/whatsapp/reiniciar`).catch(() => {});
-            }}
-          >
-            Desvincular y mostrar QR nuevo
-          </button>
-        )}
+        <div className="estado-wa">
+          <span className="simbolo">
+            <Icono nombre="whatsapp" tam={26} />
+          </span>
+          <div>
+            <span className={`estado ${estado}`}>{ESTADOS[estado] ?? estado}</span>
+            {estado === 'open' && wa.datos?.numero && <div className="tenue">Número vinculado: +{wa.datos.numero}</div>}
+          </div>
+          <span className="espacio" />
+          {estado === 'open' && (
+            <button
+              className="peligro chico"
+              onClick={async () => {
+                if (!confirm('Se cierra la sesión de WhatsApp en el servidor y aparece un QR nuevo para vincular. ¿Seguir?')) return;
+                await api.post(`${base}/whatsapp/reiniciar`).catch(() => {});
+              }}
+            >
+              Desvincular y mostrar QR nuevo
+            </button>
+          )}
+        </div>
         {qr ? (
           <>
-            <p>En el teléfono del asistente: WhatsApp → Dispositivos vinculados → Vincular dispositivo, y escanea:</p>
+            <p style={{ marginTop: 16 }}>En el teléfono del asistente: WhatsApp → Dispositivos vinculados → Vincular dispositivo, y escanea:</p>
             <img className="qr" src={qr} alt="Código QR para vincular WhatsApp" />
           </>
         ) : (
-          wa.datos?.estado !== 'open' && <p className="tenue">Esperando el código QR del gateway…</p>
+          estado !== 'open' && <p className="tenue" style={{ marginTop: 12 }}>Esperando el código QR del gateway…</p>
         )}
         <Aviso error={wa.error} />
       </div>
-      {wa.datos && wa.datos.estado !== 'open' && <Vincular base={base} wa={wa.datos} />}
-      {empresa.datos && <Filtro base={base} empresa={empresa.datos} alGuardar={empresa.recargar} />}
-      {empresa.datos && <PausaAutomatica base={base} activa={empresa.datos.pausaAutomatica} alGuardar={empresa.recargar} />}
+      {wa.datos && estado !== 'open' && <Vincular base={base} wa={wa.datos} />}
+      <div className="rejilla-2">
+        {empresa.datos && <Filtro base={base} empresa={empresa.datos} alGuardar={empresa.recargar} />}
+        {empresa.datos && <PausaAutomatica base={base} activa={empresa.datos.pausaAutomatica} alGuardar={empresa.recargar} />}
+      </div>
     </section>
   );
 }
@@ -106,7 +118,7 @@ function Filtro({ base, empresa, alGuardar }: { base: string; empresa: Empresa; 
         </label>
       ))}
       {modo === 'SOLO_LISTA' && !empresa.filtroNumeros.length && (
-        <p className="alerta-caja">La lista está vacía: el asistente no le está respondiendo a nadie. Agrega al menos un número y guarda.</p>
+        <p className="alerta-caja suave">La lista está vacía: el asistente no le está respondiendo a nadie. Agrega al menos un número y guarda.</p>
       )}
       {modo !== 'TODOS' && (
         <label>

@@ -31,11 +31,19 @@ export function Acceso({ alEntrar }: { alEntrar: (s: Sesion) => void }) {
 
   return (
     <div className="acceso">
-      <form className="tarjeta" onSubmit={enviar}>
-        <img className="logo" src="/logo-blc.png" alt="BLC Building Leaders Company" />
-        <h1>Panel del asistente</h1>
-        <p className="lema">Fortalecemos líderes. Transformamos organizaciones. Construimos legados.</p>
-        <p className="tenue">{primero ? 'Crea el primer usuario administrador.' : 'Entra con tu usuario del equipo.'}</p>
+      <section className="acceso-marca">
+        <img className="logo" src="/logo-blc-blanco.png" alt="BLC Building Leaders Company" />
+        <div>
+          <p className="kicker">Panel del asistente</p>
+          <h1>Fortalecemos líderes. Transformamos organizaciones.</h1>
+          <p className="lema">Aquí el equipo sigue las conversaciones del asistente de WhatsApp, atiende los escalamientos y mantiene al día lo que el asistente sabe.</p>
+        </div>
+        <p className="acceso-pie">Building Leaders Company · Construimos legados.</p>
+      </section>
+      <div className="acceso-form">
+      <form onSubmit={enviar}>
+        <h2>{primero ? 'Primer acceso' : 'Entrar'}</h2>
+        <p className="tenue">{primero ? 'Crea el primer usuario administrador.' : 'Usa tu usuario del equipo BLC.'}</p>
         {primero && (
           <>
             <label>
@@ -66,6 +74,7 @@ export function Acceso({ alEntrar }: { alEntrar: (s: Sesion) => void }) {
           {primero ? 'Ya tengo usuario' : 'Primer acceso'}
         </button>
       </form>
+      </div>
     </div>
   );
 }
