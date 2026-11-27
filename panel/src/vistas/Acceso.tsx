@@ -32,8 +32,10 @@ export function Acceso({ alEntrar }: { alEntrar: (s: Sesion) => void }) {
   return (
     <div className="acceso">
       <form className="tarjeta" onSubmit={enviar}>
-        <h1>Asistente BLC</h1>
-        <p className="tenue">{primero ? 'Crea el primer usuario administrador.' : 'Entra al panel.'}</p>
+        <img className="logo" src="/logo-blc.png" alt="BLC Building Leaders Company" />
+        <h1>Panel del asistente</h1>
+        <p className="lema">Fortalecemos líderes. Transformamos organizaciones. Construimos legados.</p>
+        <p className="tenue">{primero ? 'Crea el primer usuario administrador.' : 'Entra con tu usuario del equipo.'}</p>
         {primero && (
           <>
             <label>

@@ -18,7 +18,7 @@ export function Chats({ base }: { base: string }) {
         <input placeholder="Buscar por nombre o número" value={busca} onChange={(e) => setBusca(e.target.value)} />
         <Aviso error={lista.error} />
         {filas.map((c) => (
-          <button key={c.id} className={c.id === abierto ? 'fila activa' : 'fila'} onClick={() => setAbierto(c.id)}>
+          <button key={c.id} className={['fila', c.id === abierto && 'activa', c.escalado && 'escalada'].filter(Boolean).join(' ')} onClick={() => setAbierto(c.id)}>
             <span className="fila-titulo">
               {nombreContacto(c)}
               {c.rol === 'EQUIPO' && <span className="etiqueta">equipo</span>}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { api, ErrorApi, type Sesion } from './api';
+import { api, ErrorApi, type Escalamiento, type Sesion } from './api';
+import { useDatos } from './util';
 import { Acceso } from './vistas/Acceso';
 import { Chats } from './vistas/Chats';
 import { Conocimiento } from './vistas/Conocimiento';
@@ -40,8 +41,26 @@ export function App() {
 
   if (sesion === undefined) return <div className="cargando">Cargando…</div>;
   if (!sesion) return <Acceso alEntrar={setSesion} />;
+  return <Panel sesion={sesion} seccion={seccion} menuAbierto={menuAbierto} setMenuAbierto={setMenuAbierto} setSesion={setSesion} />;
+}
 
+function Panel({
+  sesion,
+  seccion,
+  menuAbierto,
+  setMenuAbierto,
+  setSesion,
+}: {
+  sesion: Sesion;
+  seccion: Seccion;
+  menuAbierto: boolean;
+  setMenuAbierto: (f: (v: boolean) => boolean) => void;
+  setSesion: (s: Sesion | null) => void;
+}) {
   const base = `/empresas/${encodeURIComponent(sesion.empresaId)}`;
+  // Contador de escalamientos abiertos en el menú: lo primero que el equipo debe atender.
+  const abiertos = useDatos<Escalamiento[]>(`${base}/escalamientos`, 30_000).datos?.length ?? 0;
+  const titulo = SECCIONES.find((s) => s.id === seccion)?.titulo;
   const salir = async () => {
     await api.post('/auth/logout');
     setSesion(null);
@@ -51,9 +70,11 @@ export function App() {
     <div className="app">
       <header className="barra">
         <button className="hamburguesa" aria-label="Menú" onClick={() => setMenuAbierto((v) => !v)}>
-          ☰
+          ☰{abiertos > 0 && <span className="punto" aria-label={`${abiertos} escalamientos abiertos`} />}
         </button>
-        <strong>Asistente BLC</strong>
+        <img className="logo" src="/logo-blc.png" alt="BLC" />
+        <span className="marca-nombre">Asistente</span>
+        <span className="seccion-actual">{titulo}</span>
         <span className="espacio" />
         <span className="tenue">{sesion.nombre}</span>
         <button className="secundario" onClick={salir}>
@@ -66,11 +87,13 @@ export function App() {
             key={s.id}
             href={`#${s.id}`}
             className={s.id === seccion ? 'activo' : ''}
-            onClick={() => setMenuAbierto(false)}
+            onClick={() => setMenuAbierto(() => false)}
           >
             {s.titulo}
+            {s.id === 'escalamientos' && abiertos > 0 && <span className="contador">{abiertos}</span>}
           </a>
         ))}
+        <div className="menu-pie">Building Leaders Company</div>
       </nav>
       <main className="contenido">
         {seccion === 'whatsapp' && <WhatsApp base={base} />}
