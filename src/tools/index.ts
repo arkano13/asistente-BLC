@@ -3,7 +3,7 @@ import { prisma, type Contacto, type Empresa, type Rol } from '../db/prisma.js';
 import { agendaActiva, enHorarioHumano, horarioDe } from '../db/repo.js';
 import { reglaDeAvance } from '../agent/memory.js';
 import { buscar } from '../knowledge/index.js';
-import { enviarTexto, marcarNoLeido } from '../queue/index.js';
+import { enviarTexto } from '../queue/index.js';
 
 export interface Contexto {
   empresa: Empresa;
@@ -149,22 +149,19 @@ const herramientas: Herramienta[] = [
     },
     run: async ({ motivo }, { empresa, contacto }) => {
       const abierto = await prisma.escalamiento.findFirst({ where: { contactoId: contacto.id, estado: 'ABIERTO' } });
-      await prisma.$transaction([
-        abierto
-          ? prisma.escalamiento.update({ where: { id: abierto.id }, data: { motivo: `${abierto.motivo}\n${motivo}` } })
-          : prisma.escalamiento.create({ data: { empresaId: empresa.id, contactoId: contacto.id, motivo } }),
-        prisma.contacto.update({ where: { id: contacto.id }, data: { modo: 'HUMANO' } }),
-      ]);
-      // El equipo responde desde el mismo WhatsApp: el chat queda como no leído para que lo vea.
-      await marcarNoLeido(empresa.id, contacto.jid);
+      // El bot NO se pausa: sigue atendiendo. El equipo se entera porque el chat queda como no leído
+      // en el WhatsApp (lo marca el worker después de enviar) y como escalado en el panel; si quiere
+      // tomarlo, responde desde el teléfono o escribe /pausa.
+      if (abierto) await prisma.escalamiento.update({ where: { id: abierto.id }, data: { motivo: `${abierto.motivo}\n${motivo}` } });
+      else await prisma.escalamiento.create({ data: { empresaId: empresa.id, contactoId: contacto.id, motivo } });
       await avisarEquipo(empresa, `Escalamiento: ${contacto.nombre ?? ''} (${contacto.telefono ?? contacto.jid}). Motivo: ${motivo}`);
       const enHorario = enHorarioHumano(empresa);
       return {
         ok: true,
         dentro_de_horario: enHorario,
         mensaje: enHorario
-          ? 'Usa el mensaje de transferencia humana: una persona del equipo continuará por este mismo medio.'
-          : `Usa el mensaje de transferencia humana y aclara que el equipo atiende ${horarioDe(empresa).atencionHumana?.descripcion ?? 'en horario laboral'} y responderá en el siguiente horario hábil.`,
+          ? 'Usa el mensaje de transferencia humana: una persona del equipo le escribirá por este mismo medio. Mientras tanto tú sigues atendiendo sus preguntas.'
+          : `Usa el mensaje de transferencia humana y aclara que el equipo atiende ${horarioDe(empresa).atencionHumana?.descripcion ?? 'en horario laboral'} y le escribirá en el siguiente horario hábil. Mientras tanto tú sigues atendiendo sus preguntas.`,
       };
     },
   },

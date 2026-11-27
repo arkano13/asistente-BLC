@@ -1,6 +1,6 @@
 import { Worker } from 'bullmq';
 import { config } from '../config.js';
-import type { Contacto, Empresa } from '../db/prisma.js';
+import { prisma, type Contacto, type Empresa } from '../db/prisma.js';
 import { getContacto, getEmpresa, guardarSaliente, historial, marcarProcesados, pendientes } from '../db/repo.js';
 import { logger } from '../logger.js';
 import { agendarChat, enviarTexto, INBOUND, marcarNoLeido, redis, type InboundJob } from '../queue/index.js';
@@ -41,7 +41,12 @@ export function iniciarWorkerAgente() {
       const [empresa, contacto] = await Promise.all([getEmpresa(empresaId), getContacto(empresaId, jid)]);
       if (!empresa || !contacto) return;
       const r = await atenderChat(empresa, contacto);
-      if (r?.texto) await enviarTexto(empresaId, jid, r.texto, r.escalado);
+      if (r?.texto) {
+        await enviarTexto(empresaId, jid, r.texto);
+        // Chat trasladado al equipo: después de cada respuesta queda como no leído para que lo vean.
+        if (r.escalado || (await prisma.escalamiento.count({ where: { contactoId: contacto.id, estado: 'ABIERTO' } })))
+          await marcarNoLeido(empresaId, jid);
+      }
     },
     { connection: redis, concurrency: 10 },
   );

@@ -178,8 +178,9 @@ export class TenantSession {
     if (!(await guardarEntrante(this.empresaId, contacto.id, text, msg.key.id))) return;
 
     await redis.set(ultimoKey(this.empresaId, contacto.jid), JSON.stringify({ key: msg.key, messageTimestamp: msg.messageTimestamp }), 'EX', 7 * 86400);
-    // En modo HUMANO no se marca como leído: la persona del equipo ve el chat pendiente en su teléfono.
-    if (contacto.modo === 'BOT') await this.sock?.readMessages([msg.key]);
+    // En modo HUMANO o con un traslado abierto no se marca como leído: el equipo ve el chat pendiente en su teléfono.
+    const trasladado = await prisma.escalamiento.count({ where: { contactoId: contacto.id, estado: 'ABIERTO' } });
+    if (contacto.modo === 'BOT' && !trasladado) await this.sock?.readMessages([msg.key]);
 
     const rk = `wa:rate:${this.empresaId}:${contacto.jid}`;
     const n = await redis.incr(rk);
